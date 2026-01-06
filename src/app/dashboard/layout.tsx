@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { logout, getSession } from '../(auth)/actions'
+import { logout, getSession } from '@/app/(auth)/actions'
 
 export default async function DashboardLayout({
   children,
@@ -26,25 +26,25 @@ export default async function DashboardLayout({
                   대시보드
                 </Link>
                 <Link
-                  href="/guide"
+                  href="/dashboard/guide"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   가이드
                 </Link>
                 <Link
-                  href="/kakao"
+                  href="/dashboard/kakao"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   카톡
                 </Link>
                 <Link
-                  href="/compose"
+                  href="/dashboard/compose"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   작성
                 </Link>
                 <Link
-                  href="/settings"
+                  href="/dashboard/settings"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   설정
