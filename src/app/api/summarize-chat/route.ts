@@ -21,49 +21,50 @@ export async function POST(req: NextRequest) {
     const previousContent = lines.slice(0, recentStart).join('\n')
     const recentContent = lines.slice(recentStart).join('\n')
 
-    const prompt = `다음은 "${roomName || '카카오톡'}" 오픈채팅방 대화입니다.
+    const prompt = `다음은 "${roomName || '오픈채팅방'}" 대화입니다. 총 ${totalLines}개 메시지.
 
-스마트 분석 방식으로 응답해주세요:
+## 분석 방식
 - 최근 대화 (마지막 30%): 상세 분석
 - 이전 대화 (처음 70%): 간단 요약
-- 전체에서 핵심 인사이트는 반드시 추출
+- 전체에서 알아둘 만한 핵심 인사이트는 반드시 추출
 
-JSON으로 응답:
+JSON으로 응답해주세요:
 {
-  "recentAnalysis": {
-    "period": "최근 대화 기간 (예: 1월 5일)",
-    "messageCount": 숫자,
+  "summary": {
+    "period": "대화 기간",
+    "messageCount": ${totalLines},
     "activeUsers": ["활발한 참여자 최대 5명"],
-    "mainTopics": ["주요 토픽 3-5개"],
-    "details": "상세 분석 내용 (3-5문장으로 주요 논의 사항, 분위기, 핵심 발언 등)"
+    "mainTopics": ["주요 토픽 3-5개"]
+  },
+  "recentAnalysis": {
+    "period": "최근 대화 기간",
+    "details": "최근 대화 상세 분석 (3-5문장)"
   },
   "previousSummary": {
-    "period": "이전 대화 기간 (예: 1월 3일 ~ 1월 4일)",
-    "messageCount": 숫자,
-    "briefSummary": "한 줄 요약 (핵심 내용만)"
+    "period": "이전 대화 기간",
+    "briefSummary": "이전 대화 한 줄 요약"
   },
-  "keyInsights": [
+  "insights": [
     {
       "title": "인사이트 제목",
-      "description": "구체적 설명 (2-3문장)",
-      "importance": "high 또는 medium",
-      "relatedLinks": ["대화에서 공유된 관련 링크"]
+      "description": "설명",
+      "importance": "high 또는 medium"
     }
   ],
   "recommendations": [
     {
       "type": "질문답변|의견제시|정보공유",
-      "context": "어떤 질문/상황에 대해",
-      "suggestion": "이렇게 참여하면 좋겠다",
-      "sampleMessage": "실제로 보낼 수 있는 예시 메시지"
+      "context": "맥락",
+      "suggestion": "제안",
+      "sampleMessage": "예시 메시지"
     }
   ]
 }
 
-분석 지침:
-1. keyInsights의 importance가 "high"인 것은 놓치면 안 되는 중요 정보
-2. recommendations는 실제로 대화에 참여할 수 있는 구체적 방법 제시
-3. 이전 대화가 없거나 짧으면 previousSummary는 null 가능
+중요:
+1. insights에서 importance가 "high"인 것은 꼭 알아야 할 중요한 정보
+2. recommendations는 최근 대화 기준으로 답변 가능한 것들
+3. 링크가 공유되었다면 relatedLinks로 포함
 
 === 이전 대화 (간단 요약용) ===
 ${previousContent.substring(0, 5000)}
