@@ -4,8 +4,6 @@ import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Flame } from 'lucide-react'
 
-// 기존 함수들 유지 (getDateKey, hasActivityOnDate, calculateStreak, getLastWeekActivity)
-
 function getDateKey(date: Date): string {
   return `likethis_activities_${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
@@ -62,7 +60,6 @@ interface StreakCounterProps {
 export function StreakCounter({ refreshTrigger }: StreakCounterProps) {
   const [streak, setStreak] = useState(0)
   const [lastWeek, setLastWeek] = useState<boolean[]>(Array(7).fill(false))
-  const [mounted, setMounted] = useState(false)
 
   const days = ['일', '월', '화', '수', '목', '금', '토']
   const today = new Date().getDay()
@@ -73,28 +70,14 @@ export function StreakCounter({ refreshTrigger }: StreakCounterProps) {
   }, [])
 
   useEffect(() => {
-    setMounted(true)
     updateData()
   }, [updateData])
 
   useEffect(() => {
-    if (mounted && refreshTrigger !== undefined) {
+    if (refreshTrigger !== undefined) {
       updateData()
     }
-  }, [refreshTrigger, mounted, updateData])
-
-  if (!mounted) {
-    return (
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">연속 활동</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-20 flex items-center justify-center text-gray-400">로딩 중...</div>
-        </CardContent>
-      </Card>
-    )
-  }
+  }, [refreshTrigger, updateData])
 
   return (
     <Card>
