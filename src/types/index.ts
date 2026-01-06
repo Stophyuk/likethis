@@ -103,6 +103,13 @@ export interface TodayProgress {
   logs: ActivityLog[];
 }
 
+// 초기 세팅 아이템
+export interface SetupItem {
+  id: string;
+  title: string;
+  description: string;
+}
+
 // 플랫폼 가이드 데이터
 export interface PlatformGuide {
   platform: Platform;
@@ -117,4 +124,5 @@ export interface PlatformGuide {
   commentTemplates: string[];
   hashtagSuggestions?: string[];
   growthStrategy: string[];
+  setupGuide?: SetupItem[];
 }

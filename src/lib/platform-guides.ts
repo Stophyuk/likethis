@@ -1,4 +1,4 @@
-import { Platform, PlatformGuide } from '@/types';
+import { Platform, PlatformGuide, SetupItem } from '@/types';
 
 export const platformGuides: Record<Platform, PlatformGuide> = {
   x: {
@@ -48,6 +48,13 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '주 3회 이상 개발 진행상황 공유',
       '월 1회 성과/교훈 스레드 작성',
     ],
+    setupGuide: [
+      { id: 'profile-photo', title: '프로필 사진 설정', description: '전문적이고 기억에 남는 프로필 사진 업로드' },
+      { id: 'bio', title: '바이오 작성', description: '누군지, 어떤 가치를 제공하는지 명확하게' },
+      { id: 'header', title: '헤더 이미지 설정', description: '프로젝트나 브랜드를 보여주는 배너' },
+      { id: 'website', title: '웹사이트 링크 추가', description: '포트폴리오, 제품, 또는 링크트리' },
+      { id: 'pinned', title: '고정 트윗 설정', description: '자기소개 또는 대표 콘텐츠 고정' },
+    ],
   },
 
   producthunt: {
@@ -87,6 +94,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '헌터 섭외 및 관계 구축',
       '런칭 후 모든 피드백에 빠르게 응답',
     ],
+    setupGuide: [
+      { id: 'profile', title: '메이커 프로필 완성', description: '사진, 바이오, SNS 링크 연동' },
+      { id: 'twitter', title: 'Twitter 연동', description: '트위터 연결로 신뢰도 상승' },
+      { id: 'first-upvotes', title: '첫 업보트 활동', description: '관심있는 제품 10개에 업보트' },
+      { id: 'first-comments', title: '첫 댓글 활동', description: '3개 제품에 의미있는 피드백' },
+    ],
   },
 
   medium: {
@@ -123,6 +136,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '다른 작가들의 글에 양질의 댓글',
       '시리즈 형식으로 깊이 있는 콘텐츠 제작',
     ],
+    setupGuide: [
+      { id: 'profile', title: '프로필 사진 설정', description: '전문적인 프로필 사진' },
+      { id: 'bio', title: '바이오 작성', description: '어떤 주제로 글을 쓰는지' },
+      { id: 'publications', title: 'Publication 팔로우', description: '관심 분야 Publication 5개 이상' },
+      { id: 'connect', title: 'Twitter/LinkedIn 연동', description: '소셜 계정 연결' },
+    ],
   },
 
   naver: {
@@ -156,6 +175,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '이미지와 스크린샷 풍부하게 활용',
       '이웃 블로거들과 소통 (이웃추가, 댓글)',
       '시리즈 연재로 재방문 유도',
+    ],
+    setupGuide: [
+      { id: 'nickname', title: '블로그명 설정', description: '기억하기 쉬운 블로그 이름' },
+      { id: 'profile', title: '프로필 설정', description: '프로필 사진과 소개글' },
+      { id: 'category', title: '카테고리 정리', description: '글 주제별 카테고리 생성' },
+      { id: 'neighbors', title: '이웃 추가', description: '같은 관심사 블로거 10명' },
     ],
   },
 
@@ -201,6 +226,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '눈에 띄는 썸네일 제작',
       '모든 댓글에 답변',
       '커뮤니티 탭 활용',
+    ],
+    setupGuide: [
+      { id: 'channel-art', title: '채널 아트 설정', description: '배너 이미지와 프로필 사진' },
+      { id: 'description', title: '채널 설명 작성', description: '채널 소개와 업로드 주기' },
+      { id: 'links', title: '링크 추가', description: '소셜 미디어 링크 연결' },
+      { id: 'playlist', title: '재생목록 생성', description: '콘텐츠 분류용 재생목록' },
     ],
   },
 
@@ -248,6 +279,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '관련 계정 팔로우 및 소통',
       '일관된 비주얼 아이덴티티 유지',
     ],
+    setupGuide: [
+      { id: 'business', title: '비즈니스 계정 전환', description: '인사이트 확인을 위해' },
+      { id: 'bio', title: '바이오 작성', description: '계정 소개 (이모지 활용)' },
+      { id: 'link', title: '링크 추가', description: '링크트리 또는 웹사이트' },
+      { id: 'highlight', title: '하이라이트 설정', description: '스토리 하이라이트 카테고리' },
+    ],
   },
 
   reddit: {
@@ -286,6 +323,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       'r/SideProject, r/indiehackers 등 관련 서브레딧 활용',
       '솔직하고 겸손한 톤 유지',
     ],
+    setupGuide: [
+      { id: 'avatar', title: '아바타 설정', description: '프로필 아바타 커스터마이징' },
+      { id: 'bio', title: '바이오 작성', description: '간단한 자기소개' },
+      { id: 'subreddits', title: '서브레딧 가입', description: '관심 분야 커뮤니티 10개' },
+      { id: 'karma', title: '카르마 쌓기', description: '유용한 댓글로 기본 카르마' },
+    ],
   },
 
   linkedin: {
@@ -321,6 +364,13 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '개인적인 스토리텔링 활용',
       '프로젝트 성과와 교훈 공유',
       '관련 분야 전문가들과 연결',
+    ],
+    setupGuide: [
+      { id: 'photo', title: '프로필 사진', description: '전문적인 헤드샷' },
+      { id: 'headline', title: '헤드라인 작성', description: '직함 + 전문 분야' },
+      { id: 'about', title: 'About 섹션', description: '경력 요약과 비전' },
+      { id: 'experience', title: '경력 추가', description: '주요 경력 사항' },
+      { id: 'skills', title: '스킬 추가', description: '핵심 기술 최소 5개' },
     ],
   },
 
@@ -358,6 +408,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '다른 프로젝트에 피드백 제공',
       '실패와 성공 모두 솔직하게 공유',
     ],
+    setupGuide: [
+      { id: 'profile', title: '프로필 완성', description: '사진과 바이오' },
+      { id: 'product', title: '프로젝트 등록', description: '만들고 있는 제품/서비스' },
+      { id: 'groups', title: '그룹 가입', description: '관심 분야 그룹 참여' },
+      { id: 'intro', title: '자기소개 포스트', description: '첫 글로 자기소개' },
+    ],
   },
 
   kakao: {
@@ -393,6 +449,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
       '주 1회 이상 유용한 정보/링크 공유',
       '질문에 성실히 답변',
       '오프라인 모임 참석',
+    ],
+    setupGuide: [
+      { id: 'profile', title: '오픈프로필 설정', description: '오픈채팅용 프로필 생성' },
+      { id: 'rooms', title: '오픈채팅방 찾기', description: '관심 분야 채팅방 가입' },
+      { id: 'intro', title: '자기소개 준비', description: '채팅방 입장 시 인사말' },
+      { id: 'rules', title: '규칙 확인', description: '각 채팅방 규칙 숙지' },
     ],
   },
 };

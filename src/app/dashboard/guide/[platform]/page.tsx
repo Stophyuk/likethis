@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Settings } from 'lucide-react'
 import { getPlatformGuide, PLATFORM_GUIDES } from '@/lib/platform-guides'
+import { SetupChecklist } from '@/components/guide/SetupChecklist'
 
 const platformEmojis: Record<string, string> = {
   X: '𝕏',
@@ -45,6 +47,24 @@ export default async function PlatformGuidePage({
           <p className="text-gray-600">{guide.description}</p>
         </div>
       </div>
+
+      {/* 초기 세팅 가이드 */}
+      {guide.setupGuide && guide.setupGuide.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              초기 세팅 가이드
+            </CardTitle>
+            <CardDescription>
+              처음 시작할 때 이것들부터 세팅하세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <SetupChecklist platform={platform} items={guide.setupGuide} />
+          </CardContent>
+        </Card>
+      )}
 
       {/* 목표 섹션 */}
       <div className="grid gap-4 md:grid-cols-3">
