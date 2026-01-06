@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { logout, getSession } from '@/app/(auth)/actions'
+import { MyPlatformLinks } from '@/components/dashboard/MyPlatformLinks'
 
 const navItems = [
   { href: '/dashboard', label: '대시보드', icon: '🏠' },
@@ -40,11 +41,8 @@ export default async function DashboardLayout({
           ))}
         </nav>
 
-        {/* 내 플랫폼 섹션 - 나중에 URL 설정 추가 후 활성화 */}
-        <div className="p-4 border-t">
-          <p className="text-xs text-gray-400 mb-2">내 플랫폼</p>
-          <p className="text-xs text-gray-400">설정에서 URL을 추가하세요</p>
-        </div>
+        {/* 내 플랫폼 섹션 */}
+        <MyPlatformLinks />
 
         {/* 유저 정보 & 로그아웃 */}
         <div className="p-4 border-t">
