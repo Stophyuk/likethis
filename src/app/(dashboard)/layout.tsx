@@ -40,13 +40,13 @@ export default async function DashboardLayout({
                   카톡
                 </Link>
                 <Link
-                  href="/dashboard/write"
+                  href="/compose"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   작성
                 </Link>
                 <Link
-                  href="/dashboard/settings"
+                  href="/settings"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   설정
