@@ -34,7 +34,7 @@ export default async function DashboardLayout({
                   가이드
                 </Link>
                 <Link
-                  href="/dashboard/katalk"
+                  href="/kakao"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   카톡
