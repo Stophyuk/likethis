@@ -16,29 +16,32 @@ interface Room {
   created_at: string
 }
 
+const DEFAULT_ROOMS: Room[] = [
+  { id: '1', room_name: '1인개발 마스터', description: '1인개발자 네트워킹', created_at: '2024-01-01T00:00:00.000Z' },
+  { id: '2', room_name: 'AI 개발자 모임', description: 'AI/ML 관련 정보 공유', created_at: '2024-01-01T00:00:00.000Z' },
+]
+
 function loadRooms(): Room[] {
-  if (typeof window === 'undefined') return []
+  if (typeof window === 'undefined') return DEFAULT_ROOMS
   const saved = localStorage.getItem(STORAGE_KEY)
   if (saved) return JSON.parse(saved)
-  return [
-    { id: '1', room_name: '1인개발 마스터', description: '1인개발자 네트워킹', created_at: new Date().toISOString() },
-    { id: '2', room_name: 'AI 개발자 모임', description: 'AI/ML 관련 정보 공유', created_at: new Date().toISOString() },
-  ]
+  return DEFAULT_ROOMS
 }
 
 function saveRooms(rooms: Room[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms))
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms))
+  }
 }
 
 export default function KakaoPage() {
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [mounted, setMounted] = useState(false)
+  const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS)
   const [newRoomName, setNewRoomName] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    setRooms(loadRooms())
+    const savedRooms = loadRooms()
+    setRooms(savedRooms)
   }, [])
 
   const handleAddRoom = () => {
@@ -62,14 +65,6 @@ export default function KakaoPage() {
     const updated = rooms.filter(r => r.id !== id)
     setRooms(updated)
     saveRooms(updated)
-  }
-
-  if (!mounted) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-gray-500">로딩 중...</p>
-      </div>
-    )
   }
 
   return (
