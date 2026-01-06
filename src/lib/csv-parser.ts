@@ -43,7 +43,7 @@ export function parseKakaoCsv(content: string): ChatMessage[] {
         message: parts.slice(2).join(delimiter).trim().replace(/^"|"$/g, '')
       }
     })
-    .filter((m): m is ChatMessage => m !== null && m.date && m.user && m.message)
+    .filter((m): m is ChatMessage => m !== null && Boolean(m.date) && Boolean(m.user) && Boolean(m.message))
     .filter(m => !isSystemMessage(m.message))
 }
 
