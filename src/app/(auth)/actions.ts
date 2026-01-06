@@ -1,48 +1,46 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { adminAuth } from '@/lib/firebase/admin'
 
-export async function login(formData: FormData) {
-  const supabase = await createClient()
+export async function createSessionCookie(idToken: string) {
+  const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
 
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
+  try {
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn })
+    const cookieStore = await cookies()
+
+    cookieStore.set('session', sessionCookie, {
+      maxAge: expiresIn / 1000,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('Session cookie error:', error)
+    return { error: 'Failed to create session' }
   }
-
-  const { error } = await supabase.auth.signInWithPassword(data)
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  revalidatePath('/', 'layout')
-  redirect('/dashboard')
-}
-
-export async function signup(formData: FormData) {
-  const supabase = await createClient()
-
-  const data = {
-    email: formData.get('email') as string,
-    password: formData.get('password') as string,
-  }
-
-  const { error } = await supabase.auth.signUp(data)
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  revalidatePath('/', 'layout')
-  redirect('/login?message=Check your email to confirm your account')
 }
 
 export async function logout() {
-  const supabase = await createClient()
-  await supabase.auth.signOut()
-  revalidatePath('/', 'layout')
+  const cookieStore = await cookies()
+  cookieStore.delete('session')
   redirect('/login')
+}
+
+export async function getSession() {
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
+
+  if (!session) return null
+
+  try {
+    const decodedClaims = await adminAuth.verifySessionCookie(session, true)
+    return decodedClaims
+  } catch (error) {
+    return null
+  }
 }

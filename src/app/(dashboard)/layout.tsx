@@ -1,15 +1,13 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
-import { logout } from '../(auth)/actions'
+import { logout, getSession } from '../(auth)/actions'
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const session = await getSession()
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,7 +52,7 @@ export default async function DashboardLayout({
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">{user?.email}</span>
+              <span className="text-sm text-gray-600">{session?.email}</span>
               <form action={logout}>
                 <Button variant="outline" size="sm" type="submit">
                   로그아웃
