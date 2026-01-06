@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { logout, getSession } from '@/app/(auth)/actions'
 import { MyPlatformLinks } from '@/components/dashboard/MyPlatformLinks'
+import { SyncProvider } from '@/components/SyncProvider'
 
 const navItems = [
   { href: '/dashboard', label: '대시보드', icon: '🏠' },
@@ -81,7 +82,7 @@ export default async function DashboardLayout({
 
       {/* 메인 콘텐츠 */}
       <main className="flex-1 p-4 md:p-8 mt-24 md:mt-0">
-        {children}
+        <SyncProvider>{children}</SyncProvider>
       </main>
     </div>
   )
