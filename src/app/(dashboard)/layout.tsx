@@ -28,7 +28,7 @@ export default async function DashboardLayout({
                   대시보드
                 </Link>
                 <Link
-                  href="/dashboard/guides"
+                  href="/guide"
                   className="text-gray-600 hover:text-gray-900 px-3 py-2 text-sm font-medium"
                 >
                   가이드

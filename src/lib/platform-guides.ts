@@ -397,10 +397,12 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
   },
 };
 
-export function getPlatformList(): Platform[] {
-  return Object.keys(platformGuides) as Platform[];
+export function getPlatformList(): PlatformGuide[] {
+  return Object.values(platformGuides);
 }
 
-export function getPlatformGuide(platform: Platform): PlatformGuide {
-  return platformGuides[platform];
+export function getPlatformGuide(platform: Platform | string): PlatformGuide | undefined {
+  return platformGuides[platform as Platform];
 }
+
+export const PLATFORM_GUIDES = platformGuides;
