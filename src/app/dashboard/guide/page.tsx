@@ -30,7 +30,7 @@ export default function GuidePage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {platforms.map((platform) => (
-          <Link href={`/guide/${platform.platform}`} key={platform.platform}>
+          <Link href={`/dashboard/guide/${platform.platform}`} key={platform.platform}>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

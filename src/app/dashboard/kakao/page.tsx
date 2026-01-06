@@ -1,34 +1,75 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Plus, MessageCircle } from 'lucide-react'
+import { Plus, MessageCircle, Trash2 } from 'lucide-react'
 
-// 임시 데이터 (나중에 Supabase 연동)
-const mockRooms = [
-  { id: '1', room_name: '1인개발 마스터', description: '1인개발자 네트워킹', created_at: '2024-01-01' },
-  { id: '2', room_name: 'AI 개발자 모임', description: 'AI/ML 관련 정보 공유', created_at: '2024-01-01' },
-]
+const STORAGE_KEY = 'likethis_kakao_rooms'
+
+interface Room {
+  id: string
+  room_name: string
+  description: string
+  created_at: string
+}
+
+function loadRooms(): Room[] {
+  if (typeof window === 'undefined') return []
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) return JSON.parse(saved)
+  return [
+    { id: '1', room_name: '1인개발 마스터', description: '1인개발자 네트워킹', created_at: new Date().toISOString() },
+    { id: '2', room_name: 'AI 개발자 모임', description: 'AI/ML 관련 정보 공유', created_at: new Date().toISOString() },
+  ]
+}
+
+function saveRooms(rooms: Room[]) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(rooms))
+}
 
 export default function KakaoPage() {
-  const [rooms, setRooms] = useState(mockRooms)
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [mounted, setMounted] = useState(false)
   const [newRoomName, setNewRoomName] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
 
+  useEffect(() => {
+    setMounted(true)
+    setRooms(loadRooms())
+  }, [])
+
   const handleAddRoom = () => {
     if (!newRoomName.trim()) return
-    const newRoom = {
+    const newRoom: Room = {
       id: Date.now().toString(),
       room_name: newRoomName,
       description: '',
       created_at: new Date().toISOString(),
     }
-    setRooms([...rooms, newRoom])
+    const updated = [...rooms, newRoom]
+    setRooms(updated)
+    saveRooms(updated)
     setNewRoomName('')
     setShowAddForm(false)
+  }
+
+  const handleDeleteRoom = (e: React.MouseEvent, id: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const updated = rooms.filter(r => r.id !== id)
+    setRooms(updated)
+    saveRooms(updated)
+  }
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">로딩 중...</p>
+      </div>
+    )
   }
 
   return (
@@ -64,12 +105,22 @@ export default function KakaoPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {rooms.map((room) => (
-          <Link href={`/kakao/${room.id}`} key={room.id}>
+          <Link href={`/dashboard/kakao/${room.id}`} key={room.id}>
             <Card className="hover:shadow-lg transition-shadow cursor-pointer h-full">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="w-5 h-5 text-yellow-500" />
-                  {room.room_name}
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5 text-yellow-500" />
+                    {room.room_name}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-gray-400 hover:text-red-500"
+                    onClick={(e) => handleDeleteRoom(e, room.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </CardTitle>
                 {room.description && (
                   <CardDescription>{room.description}</CardDescription>
