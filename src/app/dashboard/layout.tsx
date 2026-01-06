@@ -5,6 +5,7 @@ import { MyPlatformLinks } from '@/components/dashboard/MyPlatformLinks'
 
 const navItems = [
   { href: '/dashboard', label: '대시보드', icon: '🏠' },
+  { href: '/dashboard/history', label: '히스토리', icon: '📈' },
   { href: '/dashboard/guide', label: '가이드', icon: '📚' },
   { href: '/dashboard/kakao', label: '카톡', icon: '💬' },
   { href: '/dashboard/compose', label: '작성', icon: '✍️' },
