@@ -15,10 +15,8 @@ function getPlatformEmoji(platform: string): string {
 
 export function MyPlatformLinks() {
   const [urls, setUrls] = useState<Record<string, string>>({})
-  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
     const saved = localStorage.getItem('likethis_profile_urls')
     if (saved) {
       setUrls(JSON.parse(saved))
@@ -34,8 +32,6 @@ export function MyPlatformLinks() {
     window.addEventListener('storage', handleStorage)
     return () => window.removeEventListener('storage', handleStorage)
   }, [])
-
-  if (!mounted) return null
 
   const platformsWithUrls = Object.entries(urls).filter(([_, url]) => url && url.trim())
 
