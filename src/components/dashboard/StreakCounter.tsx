@@ -1,71 +1,57 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Flame } from 'lucide-react'
 
-// 날짜 키 생성 (YYYY-MM-DD)
+// 기존 함수들 유지 (getDateKey, hasActivityOnDate, calculateStreak, getLastWeekActivity)
+
 function getDateKey(date: Date): string {
   return `likethis_activities_${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-// 해당 날짜에 활동이 있는지 확인
 function hasActivityOnDate(date: Date): boolean {
   if (typeof window === 'undefined') return false
   const key = getDateKey(date)
   const saved = localStorage.getItem(key)
   if (!saved) return false
-
   const data = JSON.parse(saved)
-  // 어떤 플랫폼이든 하나라도 체크가 있으면 활동으로 간주
   return Object.values(data).some((activities: any) =>
     Array.isArray(activities) && activities.length > 0
   )
 }
 
-// 연속 활동 일수 계산
 function calculateStreak(): number {
   if (typeof window === 'undefined') return 0
-
   let streak = 0
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-
-  // 오늘부터 과거로 거슬러 올라가며 체크
   for (let i = 0; i < 365; i++) {
     const checkDate = new Date(today)
     checkDate.setDate(today.getDate() - i)
-
     if (hasActivityOnDate(checkDate)) {
       streak++
     } else if (i === 0) {
-      // 오늘 활동이 없어도 어제까지 연속이면 스트릭 유지
       continue
     } else {
       break
     }
   }
-
   return streak
 }
 
-// 최근 7일 활동 여부
 function getLastWeekActivity(): boolean[] {
   if (typeof window === 'undefined') return Array(7).fill(false)
-
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const dayOfWeek = today.getDay() // 0=일, 1=월, ...
-
+  const dayOfWeek = today.getDay()
   const result: boolean[] = []
-
-  // 일요일부터 토요일까지 순서대로
   for (let i = 0; i < 7; i++) {
     const diff = i - dayOfWeek
     const date = new Date(today)
     date.setDate(today.getDate() + diff)
     result.push(hasActivityOnDate(date))
   }
-
   return result
 }
 
@@ -91,7 +77,6 @@ export function StreakCounter({ refreshTrigger }: StreakCounterProps) {
     updateData()
   }, [updateData])
 
-  // refreshTrigger가 변경될 때마다 데이터 갱신
   useEffect(() => {
     if (mounted && refreshTrigger !== undefined) {
       updateData()
@@ -100,54 +85,57 @@ export function StreakCounter({ refreshTrigger }: StreakCounterProps) {
 
   if (!mounted) {
     return (
-      <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-4xl font-bold flex items-center gap-2">
-                🔥 0일
-              </div>
-              <p className="text-orange-100 mt-1">연속 활동 스트릭</p>
-            </div>
-            <div className="flex gap-1">
-              {Array(7).fill(false).map((_, idx) => (
-                <div
-                  key={idx}
-                  className="w-8 h-8 rounded flex items-center justify-center text-xs bg-white/10"
-                >
-                  {days[idx]}
-                </div>
-              ))}
-            </div>
-          </div>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">연속 활동</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-20 flex items-center justify-center text-gray-400">로딩 중...</div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-      <CardContent className="p-6">
+    <Card>
+      <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="text-4xl font-bold flex items-center gap-2">
-              🔥 {streak}일
-            </div>
-            <p className="text-orange-100 mt-1">연속 활동 스트릭</p>
-          </div>
-          <div className="flex gap-1">
-            {lastWeek.map((active, idx) => (
-              <div
-                key={idx}
-                className={`w-8 h-8 rounded flex items-center justify-center text-xs ${
-                  active ? 'bg-white/30' : 'bg-white/10'
-                } ${idx === today ? 'ring-2 ring-white' : ''}`}
-              >
-                {days[idx]}
-              </div>
-            ))}
+          <CardTitle className="text-lg">연속 활동</CardTitle>
+          <div className="flex items-center gap-1 text-orange-500">
+            <Flame className="w-5 h-5" />
+            <span className="text-2xl font-bold">{streak}</span>
+            <span className="text-sm text-gray-500">일</span>
           </div>
         </div>
+      </CardHeader>
+      <CardContent>
+        {/* 이번 주 활동 표시 */}
+        <div className="grid grid-cols-7 gap-1">
+          {days.map((day, idx) => {
+            const active = lastWeek[idx]
+            const isToday = idx === today
+            return (
+              <div key={idx} className="text-center">
+                <div className="text-xs text-gray-500 mb-1">{day}</div>
+                <div
+                  className={`w-full aspect-square rounded-sm flex items-center justify-center ${
+                    active ? 'bg-orange-400' : 'bg-gray-100'
+                  } ${isToday ? 'ring-2 ring-orange-500' : ''}`}
+                >
+                  {active && <span className="text-white text-xs">✓</span>}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* 동기부여 메시지 */}
+        <p className="text-xs text-gray-500 text-center mt-3">
+          {streak === 0 && '오늘 첫 활동을 시작해보세요!'}
+          {streak > 0 && streak < 7 && `${7 - streak}일 더 하면 1주일 달성!`}
+          {streak >= 7 && streak < 30 && '잘 하고 있어요! 한 달 목표를 향해!'}
+          {streak >= 30 && '대단해요! 꾸준함이 빛나고 있어요 ✨'}
+        </p>
       </CardContent>
     </Card>
   )
