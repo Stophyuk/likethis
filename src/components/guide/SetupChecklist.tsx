@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 
 interface SetupItem {
@@ -14,16 +14,34 @@ interface SetupChecklistProps {
   items: SetupItem[]
 }
 
+function getStorageKey(platform: string): string {
+  return `likethis_setup_${platform}`
+}
+
+function loadCompleted(platform: string): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  const saved = localStorage.getItem(getStorageKey(platform))
+  if (saved) {
+    return new Set(JSON.parse(saved))
+  }
+  return new Set()
+}
+
+function saveCompleted(platform: string, completed: Set<string>): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(getStorageKey(platform), JSON.stringify([...completed]))
+}
+
 export function SetupChecklist({ platform, items }: SetupChecklistProps) {
   const [completed, setCompleted] = useState<Set<string>>(new Set())
-  const storageKey = `likethis_setup_${platform}`
+
+  const updateData = useCallback(() => {
+    setCompleted(loadCompleted(platform))
+  }, [platform])
 
   useEffect(() => {
-    const saved = localStorage.getItem(storageKey)
-    if (saved) {
-      setCompleted(new Set(JSON.parse(saved)))
-    }
-  }, [storageKey])
+    updateData()
+  }, [updateData])
 
   const toggleItem = (id: string) => {
     const newCompleted = new Set(completed)
@@ -33,7 +51,7 @@ export function SetupChecklist({ platform, items }: SetupChecklistProps) {
       newCompleted.add(id)
     }
     setCompleted(newCompleted)
-    localStorage.setItem(storageKey, JSON.stringify([...newCompleted]))
+    saveCompleted(platform, newCompleted)
   }
 
   return (
