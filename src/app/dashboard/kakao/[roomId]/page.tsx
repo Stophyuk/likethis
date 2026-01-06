@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Upload, FileText, Loader2, Copy, Check, Lightbulb, MessageSquare } from 'lucide-react'
 import { parseKakaoCsv, messagesToText, ChatMessage } from '@/lib/csv-parser'
+import { useAuth } from '@/hooks/useAuth'
+import * as firestore from '@/lib/firebase/firestore'
 
 const STORAGE_KEY = 'likethis_kakao_rooms'
 
@@ -35,6 +37,13 @@ interface AnalysisResult {
   }[]
 }
 
+interface AnalysisHistory {
+  id: string
+  analyzedAt: string
+  messageCount: number
+  result: AnalysisResult
+}
+
 export default function KakaoRoomPage() {
   const params = useParams()
   const router = useRouter()
@@ -46,6 +55,9 @@ export default function KakaoRoomPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState(false)
+  const { user } = useAuth()
+  const [history, setHistory] = useState<AnalysisHistory[]>([])
+  const [selectedHistory, setSelectedHistory] = useState<AnalysisHistory | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
@@ -55,6 +67,12 @@ export default function KakaoRoomPage() {
       if (found) setRoom(found)
     }
   }, [roomId])
+
+  useEffect(() => {
+    if (user && roomId) {
+      firestore.getAnalysisHistory(user.uid, roomId).then(h => setHistory(h as AnalysisHistory[]))
+    }
+  }, [user, roomId])
 
   const handleFileUpload = useCallback((file: File) => {
     const reader = new FileReader()
@@ -93,6 +111,17 @@ export default function KakaoRoomPage() {
       })
       const data = await res.json()
       setResult(data)
+
+      // 분석 후 히스토리 저장
+      const newHistory = {
+        analyzedAt: new Date().toISOString(),
+        messageCount: messages.length,
+        result: data
+      }
+      if (user) {
+        await firestore.saveAnalysisHistory(user.uid, roomId, newHistory)
+        setHistory(prev => [newHistory as AnalysisHistory, ...prev])
+      }
     } catch (error) {
       console.error('Analysis failed:', error)
     } finally {
@@ -125,6 +154,29 @@ export default function KakaoRoomPage() {
           <p className="text-gray-600">CSV 파일을 업로드하여 대화를 분석하세요</p>
         </div>
       </div>
+
+      {/* 분석 히스토리 */}
+      {history.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">분석 히스토리</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {history.map((h, i) => (
+                <button
+                  key={h.id || i}
+                  onClick={() => { setSelectedHistory(h); setResult(h.result) }}
+                  className={`flex-shrink-0 p-3 rounded-lg border text-left ${selectedHistory?.id === h.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
+                >
+                  <p className="font-medium text-sm">{new Date(h.analyzedAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-500">{h.messageCount}개 메시지</p>
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 파일 업로드 영역 */}
       <Card>

@@ -1,5 +1,5 @@
 import { db } from './config'
-import { doc, setDoc, getDoc } from 'firebase/firestore'
+import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore'
 
 // ===== 설정 =====
 export async function saveUserSettings(uid: string, settings: {
@@ -51,4 +51,21 @@ export async function getKakaoRooms(uid: string) {
   const ref = doc(db, 'users', uid, 'data', 'kakaoRooms')
   const snap = await getDoc(ref)
   return snap.exists() ? snap.data()?.rooms : null
+}
+
+// ===== 분석 히스토리 =====
+export async function saveAnalysisHistory(uid: string, roomId: string, analysis: Record<string, unknown>) {
+  const id = `${roomId}_${Date.now()}`
+  const ref = doc(db, 'users', uid, 'analysisHistory', id)
+  await setDoc(ref, { ...analysis, id, roomId })
+  return id
+}
+
+export async function getAnalysisHistory(uid: string, roomId: string) {
+  const ref = collection(db, 'users', uid, 'analysisHistory')
+  const snap = await getDocs(ref)
+  return snap.docs
+    .map(d => d.data())
+    .filter(d => d.roomId === roomId)
+    .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime())
 }
