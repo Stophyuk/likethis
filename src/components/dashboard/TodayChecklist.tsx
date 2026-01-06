@@ -1,25 +1,65 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { platformGuides } from '@/lib/platform-guides'
-import { Platform, ActivityGoal, ActivityLog } from '@/types'
+import { platformGuides, PLATFORM_GUIDES } from '@/lib/platform-guides'
+import { Platform, ActivityGoal } from '@/types'
 
-interface TodayChecklistProps {
-  logs?: ActivityLog[]
+// 오늘 날짜 키 생성
+function getTodayKey(): string {
+  const today = new Date()
+  return `likethis_activities_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 }
 
-export function TodayChecklist({ logs = [] }: TodayChecklistProps) {
-  // 일일 목표가 있는 플랫폼만 필터
+// 활성화된 플랫폼 가져오기
+function getActivePlatforms(): Record<string, boolean> {
+  if (typeof window === 'undefined') return {}
+  const saved = localStorage.getItem('likethis_platforms')
+  if (saved) {
+    return JSON.parse(saved)
+  }
+  // 기본값: 모든 플랫폼 활성화
+  const defaults: Record<string, boolean> = {}
+  Object.keys(PLATFORM_GUIDES).forEach(p => defaults[p] = true)
+  return defaults
+}
+
+interface TodayChecklistProps {
+  onActivityChange?: () => void
+}
+
+export function TodayChecklist({ onActivityChange }: TodayChecklistProps) {
+  const [activePlatforms, setActivePlatforms] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    setActivePlatforms(getActivePlatforms())
+  }, [])
+
+  // 일일 목표가 있고 활성화된 플랫폼만 필터
   const dailyPlatforms = Object.values(platformGuides).filter(
-    p => p.defaultDailyGoals.length > 0
+    p => p.defaultDailyGoals.length > 0 && activePlatforms[p.platform] !== false
   )
+
+  if (dailyPlatforms.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-center text-gray-500">
+          일일 목표가 있는 활성화된 플랫폼이 없습니다.
+          <br />설정에서 플랫폼을 활성화해주세요.
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {dailyPlatforms.map((platform) => (
-        <PlatformCheckCard key={platform.platform} platform={platform} logs={logs} />
+        <PlatformCheckCard
+          key={platform.platform}
+          platform={platform}
+          onActivityChange={onActivityChange}
+        />
       ))}
     </div>
   )
@@ -32,14 +72,24 @@ interface PlatformCheckCardProps {
     icon: string
     defaultDailyGoals: ActivityGoal[]
   }
-  logs: ActivityLog[]
+  onActivityChange?: () => void
 }
 
-function PlatformCheckCard({ platform, logs }: PlatformCheckCardProps) {
+function PlatformCheckCard({ platform, onActivityChange }: PlatformCheckCardProps) {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
 
-  // 해당 플랫폼의 오늘 완료된 활동 수
-  const completedCount = logs.filter(l => l.platform === platform.platform).length
+  // 로컬 스토리지에서 오늘의 체크 상태 로드
+  useEffect(() => {
+    const todayKey = getTodayKey()
+    const saved = localStorage.getItem(todayKey)
+    if (saved) {
+      const data = JSON.parse(saved)
+      if (data[platform.platform]) {
+        setCheckedItems(new Set(data[platform.platform]))
+      }
+    }
+  }, [platform.platform])
+
   const totalGoals = platform.defaultDailyGoals.reduce((sum: number, g: ActivityGoal) => sum + g.count, 0)
 
   const handleCheck = (goalIdx: number, checked: boolean) => {
@@ -51,10 +101,21 @@ function PlatformCheckCard({ platform, logs }: PlatformCheckCardProps) {
       newChecked.delete(key)
     }
     setCheckedItems(newChecked)
-    // TODO: 실제로는 여기서 Supabase에 활동 기록 저장
+
+    // 로컬 스토리지에 저장
+    const todayKey = getTodayKey()
+    const saved = localStorage.getItem(todayKey)
+    const data = saved ? JSON.parse(saved) : {}
+    data[platform.platform] = Array.from(newChecked)
+    localStorage.setItem(todayKey, JSON.stringify(data))
+
+    // 스트릭 업데이트 트리거
+    if (onActivityChange) {
+      onActivityChange()
+    }
   }
 
-  const currentCompleted = completedCount + checkedItems.size
+  const currentCompleted = checkedItems.size
 
   return (
     <Card>

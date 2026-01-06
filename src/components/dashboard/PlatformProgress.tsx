@@ -1,18 +1,96 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Progress } from '@/components/ui/progress'
-import { platformGuides } from '@/lib/platform-guides'
-import { Platform, ActivityLog, GoalFrequency } from '@/types'
+import { platformGuides, PLATFORM_GUIDES } from '@/lib/platform-guides'
+import { Platform, GoalFrequency } from '@/types'
 
-interface PlatformProgressProps {
-  logs?: ActivityLog[]
+// 활성화된 플랫폼 가져오기
+function getActivePlatforms(): Record<string, boolean> {
+  if (typeof window === 'undefined') return {}
+  const saved = localStorage.getItem('likethis_platforms')
+  if (saved) {
+    return JSON.parse(saved)
+  }
+  const defaults: Record<string, boolean> = {}
+  Object.keys(PLATFORM_GUIDES).forEach(p => defaults[p] = true)
+  return defaults
 }
 
-export function PlatformProgress({ logs = [] }: PlatformProgressProps) {
+// 오늘 날짜 키
+function getTodayKey(): string {
+  const today = new Date()
+  return `likethis_activities_${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+}
+
+// 주간 날짜 키들 (이번 주 일요일부터)
+function getWeekKeys(): string[] {
+  const today = new Date()
+  const dayOfWeek = today.getDay()
+  const sunday = new Date(today)
+  sunday.setDate(today.getDate() - dayOfWeek)
+
+  const keys: string[] = []
+  for (let i = 0; i <= dayOfWeek; i++) {
+    const date = new Date(sunday)
+    date.setDate(sunday.getDate() + i)
+    keys.push(`likethis_activities_${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`)
+  }
+  return keys
+}
+
+// 월간 날짜 키들 (이번 달 1일부터)
+function getMonthKeys(): string[] {
+  const today = new Date()
+  const keys: string[] = []
+  for (let i = 1; i <= today.getDate(); i++) {
+    const date = new Date(today.getFullYear(), today.getMonth(), i)
+    keys.push(`likethis_activities_${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`)
+  }
+  return keys
+}
+
+// 플랫폼별 완료 개수 가져오기
+function getCompletedCount(platform: string, frequency: GoalFrequency): number {
+  if (typeof window === 'undefined') return 0
+
+  let keys: string[] = []
+  switch (frequency) {
+    case 'daily':
+      keys = [getTodayKey()]
+      break
+    case 'weekly':
+      keys = getWeekKeys()
+      break
+    case 'monthly':
+      keys = getMonthKeys()
+      break
+  }
+
+  let total = 0
+  for (const key of keys) {
+    const saved = localStorage.getItem(key)
+    if (saved) {
+      const data = JSON.parse(saved)
+      if (data[platform] && Array.isArray(data[platform])) {
+        total += data[platform].length
+      }
+    }
+  }
+  return total
+}
+
+export function PlatformProgress() {
   const [frequency, setFrequency] = useState<GoalFrequency>('daily')
+  const [activePlatforms, setActivePlatforms] = useState<Record<string, boolean>>({})
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    setActivePlatforms(getActivePlatforms())
+  }, [])
 
   const getGoalsForFrequency = (platform: typeof platformGuides.x, freq: GoalFrequency) => {
     switch (freq) {
@@ -29,7 +107,7 @@ export function PlatformProgress({ logs = [] }: PlatformProgressProps) {
 
   const platforms = Object.values(platformGuides).filter(p => {
     const goals = getGoalsForFrequency(p, frequency)
-    return goals.length > 0
+    return goals.length > 0 && activePlatforms[p.platform] !== false
   })
 
   return (
@@ -51,7 +129,7 @@ export function PlatformProgress({ logs = [] }: PlatformProgressProps) {
           {platforms.map((platform) => {
             const goals = getGoalsForFrequency(platform, frequency)
             const totalGoals = goals.reduce((sum, g) => sum + g.count, 0)
-            const completed = logs.filter(l => l.platform === platform.platform).length
+            const completed = mounted ? getCompletedCount(platform.platform, frequency) : 0
             const percentage = totalGoals > 0 ? Math.min((completed / totalGoals) * 100, 100) : 0
 
             return (
