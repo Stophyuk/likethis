@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Plus, MessageCircle, Trash2 } from 'lucide-react'
+import { useSync } from '@/hooks/useSync'
 
 const STORAGE_KEY = 'likethis_kakao_rooms'
 
@@ -38,13 +39,14 @@ export default function KakaoPage() {
   const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS)
   const [newRoomName, setNewRoomName] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
+  const { syncKakaoRoomsNow } = useSync()
 
   useEffect(() => {
     const savedRooms = loadRooms()
     setRooms(savedRooms)
   }, [])
 
-  const handleAddRoom = () => {
+  const handleAddRoom = async () => {
     if (!newRoomName.trim()) return
     const newRoom: Room = {
       id: Date.now().toString(),
@@ -57,14 +59,18 @@ export default function KakaoPage() {
     saveRooms(updated)
     setNewRoomName('')
     setShowAddForm(false)
+    // 즉시 Firestore에 동기화
+    await syncKakaoRoomsNow()
   }
 
-  const handleDeleteRoom = (e: React.MouseEvent, id: string) => {
+  const handleDeleteRoom = async (e: React.MouseEvent, id: string) => {
     e.preventDefault()
     e.stopPropagation()
     const updated = rooms.filter(r => r.id !== id)
     setRooms(updated)
     saveRooms(updated)
+    // 즉시 Firestore에 동기화
+    await syncKakaoRoomsNow()
   }
 
   return (

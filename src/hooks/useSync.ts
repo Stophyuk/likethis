@@ -89,6 +89,21 @@ export function useSync() {
     }
   }, [user])
 
+  // 카카오 방 즉시 동기화
+  const syncKakaoRoomsNow = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const kakaoRooms = localStorage.getItem(LOCAL_KEYS.kakaoRooms)
+      if (kakaoRooms) {
+        await firestore.saveKakaoRooms(user.uid, JSON.parse(kakaoRooms))
+        console.log('Kakao rooms synced immediately')
+      }
+    } catch (error) {
+      console.error('Kakao rooms sync failed:', error)
+    }
+  }, [user])
+
   // 로그인 시 클라우드에서 데이터 가져오기
   useEffect(() => {
     if (user) {
@@ -96,5 +111,5 @@ export function useSync() {
     }
   }, [user, syncFromCloud])
 
-  return { syncToCloud, syncFromCloud }
+  return { syncToCloud, syncFromCloud, syncKakaoRoomsNow }
 }

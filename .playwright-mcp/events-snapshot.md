@@ -1,0 +1,1898 @@
+### Page state
+- Page URL: http://localhost:3001/dashboard/events
+- Page Title: Create Next App
+- Page Snapshot:
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - link "LikeThis" [ref=e5] [cursor=pointer]:
+        - /url: /dashboard
+      - navigation [ref=e6]:
+        - link "🏠 대시보드" [ref=e7] [cursor=pointer]:
+          - /url: /dashboard
+          - generic [ref=e8]: 🏠
+          - generic [ref=e9]: 대시보드
+        - link "📅 이벤트" [ref=e10] [cursor=pointer]:
+          - /url: /dashboard/events
+          - generic [ref=e11]: 📅
+          - generic [ref=e12]: 이벤트
+        - link "📊 트렌드" [ref=e13] [cursor=pointer]:
+          - /url: /dashboard/trends
+          - generic [ref=e14]: 📊
+          - generic [ref=e15]: 트렌드
+        - link "💬 카톡" [ref=e16] [cursor=pointer]:
+          - /url: /dashboard/kakao
+          - generic [ref=e17]: 💬
+          - generic [ref=e18]: 카톡
+        - link "✍️ 작성" [ref=e19] [cursor=pointer]:
+          - /url: /dashboard/compose
+          - generic [ref=e20]: ✍️
+          - generic [ref=e21]: 작성
+        - link "📈 히스토리" [ref=e22] [cursor=pointer]:
+          - /url: /dashboard/history
+          - generic [ref=e23]: 📈
+          - generic [ref=e24]: 히스토리
+        - link "⚙️ 설정" [ref=e25] [cursor=pointer]:
+          - /url: /dashboard/settings
+          - generic [ref=e26]: ⚙️
+          - generic [ref=e27]: 설정
+      - generic [ref=e28]:
+        - paragraph [ref=e29]: 내 플랫폼
+        - paragraph [ref=e30]: 설정에서 URL을 추가하세요
+      - button "로그아웃" [ref=e34]
+    - main [ref=e35]:
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - heading "이벤트 모니터링" [level=1] [ref=e39]
+            - paragraph [ref=e40]: 한국 스타트업/테크 이벤트를 모니터링합니다
+          - generic [ref=e41]:
+            - generic [ref=e80]: 1월 14일 (수) 업데이트
+            - button "새로고침" [ref=e81]:
+              - img
+              - text: 새로고침
+        - generic [ref=e42]:
+          - generic [ref=e43]: 스타트업
+          - generic [ref=e44]: AI/인공지능
+          - generic [ref=e45]: 창업
+          - generic [ref=e46]: 개발자
+          - generic [ref=e47]: 테크
+          - generic [ref=e48]: 네트워킹
+          - generic [ref=e49]: 해커톤
+          - generic [ref=e50]: Seoul Tech
+          - generic [ref=e51]: Seoul Startup
+          - generic [ref=e52]: Seoul AI
+        - generic [ref=e53]:
+          - button "전체 (162)" [ref=e82]
+          - button "스타트업 (12)" [ref=e83]
+          - button "AI (33)" [ref=e84]
+          - button "인공지능 (17)" [ref=e85]
+          - button "창업 (19)" [ref=e86]
+          - button "개발 (18)" [ref=e87]
+          - button "코딩 (18)" [ref=e88]
+          - button "테크 (14)" [ref=e89]
+          - button "tech (39)" [ref=e90]
+          - button "네트워킹 (12)" [ref=e91]
+          - button "해커톤 (17)" [ref=e92]
+          - button "startup (12)" [ref=e93]
+        - generic [ref=e94]:
+          - heading "2026년 1월 14일 수 111" [level=2] [ref=e95]:
+            - img [ref=e96]
+            - text: 2026년 1월 14일 수
+            - generic [ref=e98]: "111"
+          - generic [ref=e99]:
+            - generic [ref=e100] [cursor=pointer]:
+              - generic [ref=e102]: KCA "스타트업 부트캠프" Start-Up Boot Camp
+              - generic [ref=e103]:
+                - generic [ref=e104]:
+                  - img [ref=e105]
+                  - generic [ref=e108]: 장소 미정
+                - generic [ref=e110]: "#스타트업"
+                - generic [ref=e111]:
+                  - generic [ref=e112]: onoffmix
+                  - img [ref=e113]
+            - generic [ref=e117] [cursor=pointer]:
+              - generic [ref=e119]: 북미 사업진출 - 캐나다 스타트업 비자 프로그램
+              - generic [ref=e120]:
+                - generic [ref=e121]:
+                  - img [ref=e122]
+                  - generic [ref=e125]: 장소 미정
+                - generic [ref=e127]: "#스타트업"
+                - generic [ref=e128]:
+                  - generic [ref=e129]: onoffmix
+                  - img [ref=e130]
+            - generic [ref=e134] [cursor=pointer]:
+              - generic [ref=e136]: 경희 스타트업 라운지 입주팀 모집 - 1인석
+              - generic [ref=e137]:
+                - generic [ref=e138]:
+                  - img [ref=e139]
+                  - generic [ref=e142]: 장소 미정
+                - generic [ref=e144]: "#스타트업"
+                - generic [ref=e145]:
+                  - generic [ref=e146]: onoffmix
+                  - img [ref=e147]
+            - generic [ref=e151] [cursor=pointer]:
+              - generic [ref=e153]: ASAN+ 스타트업 컨퍼런스 성과공유회 개최
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - img [ref=e156]
+                  - generic [ref=e159]: 장소 미정
+                - generic [ref=e161]: "#스타트업"
+                - generic [ref=e162]:
+                  - generic [ref=e163]: onoffmix
+                  - img [ref=e164]
+            - generic [ref=e168] [cursor=pointer]:
+              - generic [ref=e170]: 예비/초기 창업자를 위한 2026년 정부지원사업 3주 완성 로드맵
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - img [ref=e173]
+                  - generic [ref=e176]: 장소 미정
+                - generic [ref=e178]: "#스타트업"
+                - generic [ref=e179]:
+                  - generic [ref=e180]: onoffmix
+                  - img [ref=e181]
+            - generic [ref=e185] [cursor=pointer]:
+              - generic [ref=e187]: "[무료특강] 부업으로 ‘월세 수준’ 수익 도전하기 – 현실기반 사이드잡 전략"
+              - generic [ref=e188]:
+                - generic [ref=e189]:
+                  - img [ref=e190]
+                  - generic [ref=e193]: 장소 미정
+                - generic [ref=e195]: "#스타트업"
+                - generic [ref=e196]:
+                  - generic [ref=e197]: onoffmix
+                  - img [ref=e198]
+            - generic [ref=e202] [cursor=pointer]:
+              - generic [ref=e204]: 2026 상반기 오렌지플래닛 정기모집(~1/20)
+              - generic [ref=e205]:
+                - generic [ref=e206]:
+                  - img [ref=e207]
+                  - generic [ref=e210]: 장소 미정
+                - generic [ref=e212]: "#스타트업"
+                - generic [ref=e213]:
+                  - generic [ref=e214]: onoffmix
+                  - img [ref=e215]
+            - generic [ref=e219] [cursor=pointer]:
+              - generic [ref=e221]: 2026 지산학 쇼케이스
+              - generic [ref=e222]:
+                - generic [ref=e223]:
+                  - img [ref=e224]
+                  - generic [ref=e227]: 장소 미정
+                - generic [ref=e229]: "#스타트업"
+                - generic [ref=e230]:
+                  - generic [ref=e231]: onoffmix
+                  - img [ref=e232]
+            - generic [ref=e236] [cursor=pointer]:
+              - generic [ref=e238]: 2026 청년 쿡 비즈니스 센터 참여기업 모집 공고
+              - generic [ref=e239]:
+                - generic [ref=e240]:
+                  - img [ref=e241]
+                  - generic [ref=e244]: 장소 미정
+                - generic [ref=e246]: "#스타트업"
+                - generic [ref=e247]:
+                  - generic [ref=e248]: onoffmix
+                  - img [ref=e249]
+            - generic [ref=e253] [cursor=pointer]:
+              - generic [ref=e255]: 2026 단디벤처포럼 매니저 모집
+              - generic [ref=e256]:
+                - generic [ref=e257]:
+                  - img [ref=e258]
+                  - generic [ref=e261]: 장소 미정
+                - generic [ref=e263]: "#스타트업"
+                - generic [ref=e264]:
+                  - generic [ref=e265]: onoffmix
+                  - img [ref=e266]
+            - generic [ref=e270] [cursor=pointer]:
+              - generic [ref=e272]: "[전국/무료] 최대 3억원 받는 정부창업지원사업 합격 비법 공개"
+              - generic [ref=e273]:
+                - generic [ref=e274]:
+                  - img [ref=e275]
+                  - generic [ref=e278]: 장소 미정
+                - generic [ref=e280]: "#스타트업"
+                - generic [ref=e281]:
+                  - generic [ref=e282]: onoffmix
+                  - img [ref=e283]
+            - generic [ref=e287] [cursor=pointer]:
+              - generic [ref=e289]: 2025년 다이나믹 이노베이터 9기 액셀러레이팅 참가기업 모
+              - generic [ref=e290]:
+                - generic [ref=e291]:
+                  - img [ref=e292]
+                  - generic [ref=e295]: 장소 미정
+                - generic [ref=e297]: "#스타트업"
+                - generic [ref=e298]:
+                  - generic [ref=e299]: onoffmix
+                  - img [ref=e300]
+            - generic [ref=e304] [cursor=pointer]:
+              - generic [ref=e306]: 2026 AI Co-Scientist Challenge Korea
+              - generic [ref=e307]:
+                - generic [ref=e308]:
+                  - img [ref=e309]
+                  - generic [ref=e312]: 장소 미정
+                - generic [ref=e313]:
+                  - generic [ref=e314]: "#AI"
+                  - generic [ref=e315]: "#인공지능"
+                - generic [ref=e316]:
+                  - generic [ref=e317]: onoffmix
+                  - img [ref=e318]
+            - generic [ref=e322] [cursor=pointer]:
+              - generic [ref=e324]: 2026 AI+X 미래혁신 포럼
+              - generic [ref=e325]:
+                - generic [ref=e326]:
+                  - img [ref=e327]
+                  - generic [ref=e330]: 장소 미정
+                - generic [ref=e331]:
+                  - generic [ref=e332]: "#AI"
+                  - generic [ref=e333]: "#인공지능"
+                - generic [ref=e334]:
+                  - generic [ref=e335]: onoffmix
+                  - img [ref=e336]
+            - generic [ref=e340] [cursor=pointer]:
+              - generic [ref=e342]: Snowflake Discover AI 웨비나
+              - generic [ref=e343]:
+                - generic [ref=e344]:
+                  - img [ref=e345]
+                  - generic [ref=e348]: 장소 미정
+                - generic [ref=e349]:
+                  - generic [ref=e350]: "#AI"
+                  - generic [ref=e351]: "#인공지능"
+                - generic [ref=e352]:
+                  - generic [ref=e353]: onoffmix
+                  - img [ref=e354]
+            - generic [ref=e358] [cursor=pointer]:
+              - generic [ref=e360]: 2026년엔 AI 논문 써보고 싶다면? 아이펠 AI 리서처 과정
+              - generic [ref=e361]:
+                - generic [ref=e362]:
+                  - img [ref=e363]
+                  - generic [ref=e366]: 장소 미정
+                - generic [ref=e367]:
+                  - generic [ref=e368]: "#AI"
+                  - generic [ref=e369]: "#인공지능"
+                - generic [ref=e370]:
+                  - generic [ref=e371]: onoffmix
+                  - img [ref=e372]
+            - generic [ref=e376] [cursor=pointer]:
+              - generic [ref=e378]: "[전액무료] AI Starter Program - All in One AI 리터러시 과정"
+              - generic [ref=e379]:
+                - generic [ref=e380]:
+                  - img [ref=e381]
+                  - generic [ref=e384]: 장소 미정
+                - generic [ref=e385]:
+                  - generic [ref=e386]: "#AI"
+                  - generic [ref=e387]: "#인공지능"
+                - generic [ref=e388]:
+                  - generic [ref=e389]: onoffmix
+                  - img [ref=e390]
+            - generic [ref=e394] [cursor=pointer]:
+              - generic [ref=e396]: 신철민의 AI 지식·협업관리 [4-2]
+              - generic [ref=e397]:
+                - generic [ref=e398]:
+                  - img [ref=e399]
+                  - generic [ref=e402]: 장소 미정
+                - generic [ref=e403]:
+                  - generic [ref=e404]: "#AI"
+                  - generic [ref=e405]: "#인공지능"
+                - generic [ref=e406]:
+                  - generic [ref=e407]: onoffmix
+                  - img [ref=e408]
+            - generic [ref=e412] [cursor=pointer]:
+              - generic [ref=e414]: "[전액무료/온라인]동국대 AI Starter Program - MS 국제공인자격증 취득과정"
+              - generic [ref=e415]:
+                - generic [ref=e416]:
+                  - img [ref=e417]
+                  - generic [ref=e420]: 장소 미정
+                - generic [ref=e421]:
+                  - generic [ref=e422]: "#AI"
+                  - generic [ref=e423]: "#인공지능"
+                - generic [ref=e424]:
+                  - generic [ref=e425]: onoffmix
+                  - img [ref=e426]
+            - generic [ref=e430] [cursor=pointer]:
+              - generic [ref=e432]: 쉽고 재밌는 AI 활용 클래스(스마트 시니어)
+              - generic [ref=e433]:
+                - generic [ref=e434]:
+                  - img [ref=e435]
+                  - generic [ref=e438]: 장소 미정
+                - generic [ref=e439]:
+                  - generic [ref=e440]: "#AI"
+                  - generic [ref=e441]: "#인공지능"
+                - generic [ref=e442]:
+                  - generic [ref=e443]: onoffmix
+                  - img [ref=e444]
+            - generic [ref=e448] [cursor=pointer]:
+              - generic [ref=e450]: "[HR 웨비나] AI 시대 인력관리의 재구성"
+              - generic [ref=e451]:
+                - generic [ref=e452]:
+                  - img [ref=e453]
+                  - generic [ref=e456]: 장소 미정
+                - generic [ref=e457]:
+                  - generic [ref=e458]: "#AI"
+                  - generic [ref=e459]: "#인공지능"
+                - generic [ref=e460]:
+                  - generic [ref=e461]: onoffmix
+                  - img [ref=e462]
+            - generic [ref=e466] [cursor=pointer]:
+              - generic [ref=e468]: "[HR 웨비나] AI 시대 인력관리의 재구성"
+              - generic [ref=e469]:
+                - generic [ref=e470]:
+                  - img [ref=e471]
+                  - generic [ref=e474]: 장소 미정
+                - generic [ref=e475]:
+                  - generic [ref=e476]: "#AI"
+                  - generic [ref=e477]: "#인공지능"
+                - generic [ref=e478]:
+                  - generic [ref=e479]: onoffmix
+                  - img [ref=e480]
+            - generic [ref=e484] [cursor=pointer]:
+              - generic [ref=e486]: 영상활용 UI/UX 피그마 웹디자인&웹퍼블리셔 (생성형 AI 활용)
+              - generic [ref=e487]:
+                - generic [ref=e488]:
+                  - img [ref=e489]
+                  - generic [ref=e492]: 장소 미정
+                - generic [ref=e493]:
+                  - generic [ref=e494]: "#AI"
+                  - generic [ref=e495]: "#인공지능"
+                - generic [ref=e496]:
+                  - generic [ref=e497]: onoffmix
+                  - img [ref=e498]
+            - generic [ref=e502] [cursor=pointer]:
+              - generic [ref=e504]: "[HR 웨비나] AI 시대 인력관리의 재구성"
+              - generic [ref=e505]:
+                - generic [ref=e506]:
+                  - img [ref=e507]
+                  - generic [ref=e510]: 장소 미정
+                - generic [ref=e511]:
+                  - generic [ref=e512]: "#AI"
+                  - generic [ref=e513]: "#인공지능"
+                - generic [ref=e514]:
+                  - generic [ref=e515]: onoffmix
+                  - img [ref=e516]
+            - generic [ref=e520] [cursor=pointer]:
+              - generic [ref=e522]: 영상활용 UI/UX 피그마 웹디자인&웹퍼블리셔 (생성형 AI 활용)
+              - generic [ref=e523]:
+                - generic [ref=e524]:
+                  - img [ref=e525]
+                  - generic [ref=e528]: 장소 미정
+                - generic [ref=e529]:
+                  - generic [ref=e530]: "#AI"
+                  - generic [ref=e531]: "#인공지능"
+                - generic [ref=e532]:
+                  - generic [ref=e533]: onoffmix
+                  - img [ref=e534]
+            - generic [ref=e538] [cursor=pointer]:
+              - generic [ref=e540]: "[사전등록 오픈] AI SEOUL 2026, 이세돌 X 조승연 스페셜 세션 확정"
+              - generic [ref=e541]:
+                - generic [ref=e542]:
+                  - img [ref=e543]
+                  - generic [ref=e546]: 장소 미정
+                - generic [ref=e547]:
+                  - generic [ref=e548]: "#AI"
+                  - generic [ref=e549]: "#인공지능"
+                - generic [ref=e550]:
+                  - generic [ref=e551]: onoffmix
+                  - img [ref=e552]
+            - generic [ref=e556] [cursor=pointer]:
+              - generic [ref=e558]: 국내 최대 규모의 인공지능 전문 전시회,AI EXPO KOREA 2026 사전등록하고 무료
+              - generic [ref=e559]:
+                - generic [ref=e560]:
+                  - img [ref=e561]
+                  - generic [ref=e564]: 장소 미정
+                - generic [ref=e565]:
+                  - generic [ref=e566]: "#AI"
+                  - generic [ref=e567]: "#인공지능"
+                - generic [ref=e568]:
+                  - generic [ref=e569]: onoffmix
+                  - img [ref=e570]
+            - generic [ref=e574] [cursor=pointer]:
+              - generic [ref=e576]: NVIDIA H200 기반 자바 & AI 개발자 양성과정 교육생 모집 (1/27 개강)
+              - generic [ref=e577]:
+                - generic [ref=e578]:
+                  - img [ref=e579]
+                  - generic [ref=e582]: 장소 미정
+                - generic [ref=e583]:
+                  - generic [ref=e584]: "#AI"
+                  - generic [ref=e585]: "#인공지능"
+                - generic [ref=e586]:
+                  - generic [ref=e587]: onoffmix
+                  - img [ref=e588]
+            - generic [ref=e592] [cursor=pointer]:
+              - generic [ref=e594]: 노코드 Dify와 MCP로 구현하는 AI 에이전트 업무 자동화 1-day 워크숍
+              - generic [ref=e595]:
+                - generic [ref=e596]:
+                  - img [ref=e597]
+                  - generic [ref=e600]: 장소 미정
+                - generic [ref=e601]:
+                  - generic [ref=e602]: "#AI"
+                  - generic [ref=e603]: "#인공지능"
+                - generic [ref=e604]:
+                  - generic [ref=e605]: onoffmix
+                  - img [ref=e606]
+            - generic [ref=e610] [cursor=pointer]:
+              - generic [ref=e612]: "[전국/무료] 한경닷컴 창업 실전 역량 강화 교육「AI 스타트업 레볼루션」6기"
+              - generic [ref=e613]:
+                - generic [ref=e614]:
+                  - img [ref=e615]
+                  - generic [ref=e618]: 장소 미정
+                - generic [ref=e620]: "#창업"
+                - generic [ref=e621]:
+                  - generic [ref=e622]: onoffmix
+                  - img [ref=e623]
+            - generic [ref=e627] [cursor=pointer]:
+              - generic [ref=e629]: "[은평창업지원센터] 2026 상반기 은평창업지원센터 입주기업 모집"
+              - generic [ref=e630]:
+                - generic [ref=e631]:
+                  - img [ref=e632]
+                  - generic [ref=e635]: 장소 미정
+                - generic [ref=e637]: "#창업"
+                - generic [ref=e638]:
+                  - generic [ref=e639]: onoffmix
+                  - img [ref=e640]
+            - generic [ref=e644] [cursor=pointer]:
+              - generic [ref=e646]: 20대 무직자 6명, 현금 2천만 원 받게 한 방법(정부지원사업 창업 무료교육.투자받기)
+              - generic [ref=e647]:
+                - generic [ref=e648]:
+                  - img [ref=e649]
+                  - generic [ref=e652]: 장소 미정
+                - generic [ref=e654]: "#창업"
+                - generic [ref=e655]:
+                  - generic [ref=e656]: onoffmix
+                  - img [ref=e657]
+            - generic [ref=e661] [cursor=pointer]:
+              - generic [ref=e663]: 2025 GH 청춘 빌드업 창업 공모전
+              - generic [ref=e664]:
+                - generic [ref=e665]:
+                  - img [ref=e666]
+                  - generic [ref=e669]: 장소 미정
+                - generic [ref=e671]: "#창업"
+                - generic [ref=e672]:
+                  - generic [ref=e673]: onoffmix
+                  - img [ref=e674]
+            - generic [ref=e678] [cursor=pointer]:
+              - generic [ref=e680]: 창업 컨설턴트 육성 프로젝트(무료교육)
+              - generic [ref=e681]:
+                - generic [ref=e682]:
+                  - img [ref=e683]
+                  - generic [ref=e686]: 장소 미정
+                - generic [ref=e688]: "#창업"
+                - generic [ref=e689]:
+                  - generic [ref=e690]: onoffmix
+                  - img [ref=e691]
+            - generic [ref=e695] [cursor=pointer]:
+              - generic [ref=e697]: 도매토피아X이셀러스 위탁판매 창업 콘서트 (무료!!)
+              - generic [ref=e698]:
+                - generic [ref=e699]:
+                  - img [ref=e700]
+                  - generic [ref=e703]: 장소 미정
+                - generic [ref=e705]: "#창업"
+                - generic [ref=e706]:
+                  - generic [ref=e707]: onoffmix
+                  - img [ref=e708]
+            - generic [ref=e712] [cursor=pointer]:
+              - generic [ref=e714]: 창업 컨설턴트 양성과정 (보너스. 자격증 취득)
+              - generic [ref=e715]:
+                - generic [ref=e716]:
+                  - img [ref=e717]
+                  - generic [ref=e720]: 장소 미정
+                - generic [ref=e722]: "#창업"
+                - generic [ref=e723]:
+                  - generic [ref=e724]: onoffmix
+                  - img [ref=e725]
+            - generic [ref=e729] [cursor=pointer]:
+              - generic [ref=e731]: 창업 컨설턴트 양성과정 (보너스. 자격증 취득)
+              - generic [ref=e732]:
+                - generic [ref=e733]:
+                  - img [ref=e734]
+                  - generic [ref=e737]: 장소 미정
+                - generic [ref=e739]: "#창업"
+                - generic [ref=e740]:
+                  - generic [ref=e741]: onoffmix
+                  - img [ref=e742]
+            - generic [ref=e746] [cursor=pointer]:
+              - generic [ref=e748]: "[무료교육] 글로벌셀러(해외직구) 1인 무점포 창업"
+              - generic [ref=e749]:
+                - generic [ref=e750]:
+                  - img [ref=e751]
+                  - generic [ref=e754]: 장소 미정
+                - generic [ref=e756]: "#창업"
+                - generic [ref=e757]:
+                  - generic [ref=e758]: onoffmix
+                  - img [ref=e759]
+            - generic [ref=e763] [cursor=pointer]:
+              - generic [ref=e765]: 무료 창업교육 “소자본 외식창업의 성공전략”
+              - generic [ref=e766]:
+                - generic [ref=e767]:
+                  - img [ref=e768]
+                  - generic [ref=e771]: 장소 미정
+                - generic [ref=e773]: "#창업"
+                - generic [ref=e774]:
+                  - generic [ref=e775]: onoffmix
+                  - img [ref=e776]
+            - generic [ref=e780] [cursor=pointer]:
+              - generic [ref=e782]: "[강북창업지원센터] 2026년 전문 강사 모집"
+              - generic [ref=e783]:
+                - generic [ref=e784]:
+                  - img [ref=e785]
+                  - generic [ref=e788]: 장소 미정
+                - generic [ref=e790]: "#창업"
+                - generic [ref=e791]:
+                  - generic [ref=e792]: onoffmix
+                  - img [ref=e793]
+            - generic [ref=e797] [cursor=pointer]:
+              - generic [ref=e799]: 무료 창업교육 “소상공인을 위한 창업자금 조달전략”
+              - generic [ref=e800]:
+                - generic [ref=e801]:
+                  - img [ref=e802]
+                  - generic [ref=e805]: 장소 미정
+                - generic [ref=e807]: "#창업"
+                - generic [ref=e808]:
+                  - generic [ref=e809]: onoffmix
+                  - img [ref=e810]
+            - generic [ref=e814] [cursor=pointer]:
+              - generic [ref=e816]: 2026 강원 창업 지원사업 사업설명회
+              - generic [ref=e817]:
+                - generic [ref=e818]:
+                  - img [ref=e819]
+                  - generic [ref=e822]: 장소 미정
+                - generic [ref=e824]: "#창업"
+                - generic [ref=e825]:
+                  - generic [ref=e826]: onoffmix
+                  - img [ref=e827]
+            - generic [ref=e831] [cursor=pointer]:
+              - generic [ref=e833]: "창업의 첫 시작 : PSST 문제 정의 공모전"
+              - generic [ref=e834]:
+                - generic [ref=e835]:
+                  - img [ref=e836]
+                  - generic [ref=e839]: 장소 미정
+                - generic [ref=e841]: "#창업"
+                - generic [ref=e842]:
+                  - generic [ref=e843]: onoffmix
+                  - img [ref=e844]
+            - generic [ref=e848] [cursor=pointer]:
+              - generic [ref=e850]: 아파트 공부방 창업, 지금 기탄사고력교실 1월 사업설명회에서 만나보세요!
+              - generic [ref=e851]:
+                - generic [ref=e852]:
+                  - img [ref=e853]
+                  - generic [ref=e856]: 장소 미정
+                - generic [ref=e858]: "#창업"
+                - generic [ref=e859]:
+                  - generic [ref=e860]: onoffmix
+                  - img [ref=e861]
+            - generic [ref=e865] [cursor=pointer]:
+              - generic [ref=e867]: "[무료교육] 주 1회 관리 무점포 창업? 무인 뽑기방으로 퇴근 후 창업 시작하는 법"
+              - generic [ref=e868]:
+                - generic [ref=e869]:
+                  - img [ref=e870]
+                  - generic [ref=e873]: 장소 미정
+                - generic [ref=e875]: "#창업"
+                - generic [ref=e876]:
+                  - generic [ref=e877]: onoffmix
+                  - img [ref=e878]
+            - generic [ref=e882] [cursor=pointer]:
+              - generic [ref=e884]: 소상공인 창업사관학교, 제18회 무료교육 안내
+              - generic [ref=e885]:
+                - generic [ref=e886]:
+                  - img [ref=e887]
+                  - generic [ref=e890]: 장소 미정
+                - generic [ref=e892]: "#창업"
+                - generic [ref=e893]:
+                  - generic [ref=e894]: onoffmix
+                  - img [ref=e895]
+            - generic [ref=e899] [cursor=pointer]:
+              - generic [ref=e901]: "[무료특강/1월] 2026 온라인 창업의 기초와 유튜브쇼핑 연결"
+              - generic [ref=e902]:
+                - generic [ref=e903]:
+                  - img [ref=e904]
+                  - generic [ref=e907]: 장소 미정
+                - generic [ref=e909]: "#창업"
+                - generic [ref=e910]:
+                  - generic [ref=e911]: onoffmix
+                  - img [ref=e912]
+            - generic [ref=e916] [cursor=pointer]:
+              - generic [ref=e918]: 2026 생성형 AI 기반 창업역량 강화 프로그램 참가자 모집 (~1/18)
+              - generic [ref=e919]:
+                - generic [ref=e920]:
+                  - img [ref=e921]
+                  - generic [ref=e924]: 장소 미정
+                - generic [ref=e926]: "#창업"
+                - generic [ref=e927]:
+                  - generic [ref=e928]: onoffmix
+                  - img [ref=e929]
+            - generic [ref=e933] [cursor=pointer]:
+              - generic [ref=e935]: NVIDIA H200으로 직접 실습하는 AI 개발자 과정 훈련생 모집(1.27개강)
+              - generic [ref=e936]:
+                - generic [ref=e937]:
+                  - img [ref=e938]
+                  - generic [ref=e941]: 장소 미정
+                - generic [ref=e942]:
+                  - generic [ref=e943]: "#개발"
+                  - generic [ref=e944]: "#코딩"
+                - generic [ref=e945]:
+                  - generic [ref=e946]: onoffmix
+                  - img [ref=e947]
+            - generic [ref=e951] [cursor=pointer]:
+              - generic [ref=e953]: "[1/27 개강] NVIDIA H200 기반 자바 & AI 개발자 양성과정"
+              - generic [ref=e954]:
+                - generic [ref=e955]:
+                  - img [ref=e956]
+                  - generic [ref=e959]: 장소 미정
+                - generic [ref=e960]:
+                  - generic [ref=e961]: "#개발"
+                  - generic [ref=e962]: "#코딩"
+                - generic [ref=e963]:
+                  - generic [ref=e964]: onoffmix
+                  - img [ref=e965]
+            - generic [ref=e969] [cursor=pointer]:
+              - generic [ref=e971]: NVIDIA H200으로 직접 실습하는 AI 개발자 과정 수강생 모집
+              - generic [ref=e972]:
+                - generic [ref=e973]:
+                  - img [ref=e974]
+                  - generic [ref=e977]: 장소 미정
+                - generic [ref=e978]:
+                  - generic [ref=e979]: "#개발"
+                  - generic [ref=e980]: "#코딩"
+                - generic [ref=e981]:
+                  - generic [ref=e982]: onoffmix
+                  - img [ref=e983]
+            - generic [ref=e987] [cursor=pointer]:
+              - generic [ref=e989]: "[AXTEA : K디지털] AI시대 풀스택 웹 개발자 양성과정 (~ 01.29 마감)"
+              - generic [ref=e990]:
+                - generic [ref=e991]:
+                  - img [ref=e992]
+                  - generic [ref=e995]: 장소 미정
+                - generic [ref=e996]:
+                  - generic [ref=e997]: "#개발"
+                  - generic [ref=e998]: "#코딩"
+                - generic [ref=e999]:
+                  - generic [ref=e1000]: onoffmix
+                  - img [ref=e1001]
+            - generic [ref=e1005] [cursor=pointer]:
+              - generic [ref=e1007]: "[쌍용강북교육센터] 3/3개강 AWS&CI/CD 기반 JAVA 클라우드 개발자 양성 과정"
+              - generic [ref=e1008]:
+                - generic [ref=e1009]:
+                  - img [ref=e1010]
+                  - generic [ref=e1013]: 장소 미정
+                - generic [ref=e1014]:
+                  - generic [ref=e1015]: "#개발"
+                  - generic [ref=e1016]: "#코딩"
+                - generic [ref=e1017]:
+                  - generic [ref=e1018]: onoffmix
+                  - img [ref=e1019]
+            - generic [ref=e1023] [cursor=pointer]:
+              - generic [ref=e1025]: "[쌍용강북교육센터] 3/3개강 AWS&CI/CD 기반 JAVA 클라우드 개발자 양성 과정"
+              - generic [ref=e1026]:
+                - generic [ref=e1027]:
+                  - img [ref=e1028]
+                  - generic [ref=e1031]: 장소 미정
+                - generic [ref=e1032]:
+                  - generic [ref=e1033]: "#개발"
+                  - generic [ref=e1034]: "#코딩"
+                - generic [ref=e1035]:
+                  - generic [ref=e1036]: onoffmix
+                  - img [ref=e1037]
+            - generic [ref=e1041] [cursor=pointer]:
+              - generic [ref=e1043]: "[쌍용강북교육센터] 2/23개강 AWS&CI/CD 기반 JAVA 클라우드 개발자 양성 과정"
+              - generic [ref=e1044]:
+                - generic [ref=e1045]:
+                  - img [ref=e1046]
+                  - generic [ref=e1049]: 장소 미정
+                - generic [ref=e1050]:
+                  - generic [ref=e1051]: "#개발"
+                  - generic [ref=e1052]: "#코딩"
+                - generic [ref=e1053]:
+                  - generic [ref=e1054]: onoffmix
+                  - img [ref=e1055]
+            - generic [ref=e1059] [cursor=pointer]:
+              - generic [ref=e1061]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1062]:
+                - generic [ref=e1063]:
+                  - img [ref=e1064]
+                  - generic [ref=e1067]: 장소 미정
+                - generic [ref=e1068]:
+                  - generic [ref=e1069]: "#개발"
+                  - generic [ref=e1070]: "#코딩"
+                - generic [ref=e1071]:
+                  - generic [ref=e1072]: onoffmix
+                  - img [ref=e1073]
+            - generic [ref=e1077] [cursor=pointer]:
+              - generic [ref=e1079]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1080]:
+                - generic [ref=e1081]:
+                  - img [ref=e1082]
+                  - generic [ref=e1085]: 장소 미정
+                - generic [ref=e1086]:
+                  - generic [ref=e1087]: "#개발"
+                  - generic [ref=e1088]: "#코딩"
+                - generic [ref=e1089]:
+                  - generic [ref=e1090]: onoffmix
+                  - img [ref=e1091]
+            - generic [ref=e1095] [cursor=pointer]:
+              - generic [ref=e1097]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1098]:
+                - generic [ref=e1099]:
+                  - img [ref=e1100]
+                  - generic [ref=e1103]: 장소 미정
+                - generic [ref=e1104]:
+                  - generic [ref=e1105]: "#개발"
+                  - generic [ref=e1106]: "#코딩"
+                - generic [ref=e1107]:
+                  - generic [ref=e1108]: onoffmix
+                  - img [ref=e1109]
+            - generic [ref=e1113] [cursor=pointer]:
+              - generic [ref=e1115]: 생성형 AI 기반 서비스 개발자 양성 5회차
+              - generic [ref=e1116]:
+                - generic [ref=e1117]:
+                  - img [ref=e1118]
+                  - generic [ref=e1121]: 장소 미정
+                - generic [ref=e1122]:
+                  - generic [ref=e1123]: "#개발"
+                  - generic [ref=e1124]: "#코딩"
+                - generic [ref=e1125]:
+                  - generic [ref=e1126]: onoffmix
+                  - img [ref=e1127]
+            - generic [ref=e1131] [cursor=pointer]:
+              - generic [ref=e1133]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1134]:
+                - generic [ref=e1135]:
+                  - img [ref=e1136]
+                  - generic [ref=e1139]: 장소 미정
+                - generic [ref=e1140]:
+                  - generic [ref=e1141]: "#개발"
+                  - generic [ref=e1142]: "#코딩"
+                - generic [ref=e1143]:
+                  - generic [ref=e1144]: onoffmix
+                  - img [ref=e1145]
+            - generic [ref=e1149] [cursor=pointer]:
+              - generic [ref=e1151]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1152]:
+                - generic [ref=e1153]:
+                  - img [ref=e1154]
+                  - generic [ref=e1157]: 장소 미정
+                - generic [ref=e1158]:
+                  - generic [ref=e1159]: "#개발"
+                  - generic [ref=e1160]: "#코딩"
+                - generic [ref=e1161]:
+                  - generic [ref=e1162]: onoffmix
+                  - img [ref=e1163]
+            - generic [ref=e1167] [cursor=pointer]:
+              - generic [ref=e1169]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1170]:
+                - generic [ref=e1171]:
+                  - img [ref=e1172]
+                  - generic [ref=e1175]: 장소 미정
+                - generic [ref=e1176]:
+                  - generic [ref=e1177]: "#개발"
+                  - generic [ref=e1178]: "#코딩"
+                - generic [ref=e1179]:
+                  - generic [ref=e1180]: onoffmix
+                  - img [ref=e1181]
+            - generic [ref=e1185] [cursor=pointer]:
+              - generic [ref=e1187]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1188]:
+                - generic [ref=e1189]:
+                  - img [ref=e1190]
+                  - generic [ref=e1193]: 장소 미정
+                - generic [ref=e1194]:
+                  - generic [ref=e1195]: "#개발"
+                  - generic [ref=e1196]: "#코딩"
+                - generic [ref=e1197]:
+                  - generic [ref=e1198]: onoffmix
+                  - img [ref=e1199]
+            - generic [ref=e1203] [cursor=pointer]:
+              - generic [ref=e1205]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1206]:
+                - generic [ref=e1207]:
+                  - img [ref=e1208]
+                  - generic [ref=e1211]: 장소 미정
+                - generic [ref=e1212]:
+                  - generic [ref=e1213]: "#개발"
+                  - generic [ref=e1214]: "#코딩"
+                - generic [ref=e1215]:
+                  - generic [ref=e1216]: onoffmix
+                  - img [ref=e1217]
+            - generic [ref=e1221] [cursor=pointer]:
+              - generic [ref=e1223]: 구글 Flutter & Spring Framework 기반 풀스택 개발자 과정(AI서비스)
+              - generic [ref=e1224]:
+                - generic [ref=e1225]:
+                  - img [ref=e1226]
+                  - generic [ref=e1229]: 장소 미정
+                - generic [ref=e1230]:
+                  - generic [ref=e1231]: "#개발"
+                  - generic [ref=e1232]: "#코딩"
+                - generic [ref=e1233]:
+                  - generic [ref=e1234]: onoffmix
+                  - img [ref=e1235]
+            - generic [ref=e1239] [cursor=pointer]:
+              - generic [ref=e1241]: "[국기]구글 Flutter & Spring Framework 기반 풀스택 개발자 과정"
+              - generic [ref=e1242]:
+                - generic [ref=e1243]:
+                  - img [ref=e1244]
+                  - generic [ref=e1247]: 장소 미정
+                - generic [ref=e1248]:
+                  - generic [ref=e1249]: "#개발"
+                  - generic [ref=e1250]: "#코딩"
+                - generic [ref=e1251]:
+                  - generic [ref=e1252]: onoffmix
+                  - img [ref=e1253]
+            - generic [ref=e1257] [cursor=pointer]:
+              - generic [ref=e1259]: 2026 스타트업 투자자 서밋 SIAS
+              - generic [ref=e1260]:
+                - generic [ref=e1261]:
+                  - img [ref=e1262]
+                  - generic [ref=e1265]: 장소 미정
+                - generic [ref=e1266]:
+                  - generic [ref=e1267]: "#테크"
+                  - generic [ref=e1268]: "#tech"
+                - generic [ref=e1269]:
+                  - generic [ref=e1270]: onoffmix
+                  - img [ref=e1271]
+            - generic [ref=e1275] [cursor=pointer]:
+              - generic [ref=e1277]: 2026 청년 쿡 푸드테크 센터 참여기업 모집 공고
+              - generic [ref=e1278]:
+                - generic [ref=e1279]:
+                  - img [ref=e1280]
+                  - generic [ref=e1283]: 장소 미정
+                - generic [ref=e1284]:
+                  - generic [ref=e1285]: "#테크"
+                  - generic [ref=e1286]: "#tech"
+                - generic [ref=e1287]:
+                  - generic [ref=e1288]: onoffmix
+                  - img [ref=e1289]
+            - generic [ref=e1293] [cursor=pointer]:
+              - generic [ref=e1295]: 제33회 대한민국 임팩테크 대상
+              - generic [ref=e1296]:
+                - generic [ref=e1297]:
+                  - img [ref=e1298]
+                  - generic [ref=e1301]: 장소 미정
+                - generic [ref=e1302]:
+                  - generic [ref=e1303]: "#테크"
+                  - generic [ref=e1304]: "#tech"
+                - generic [ref=e1305]:
+                  - generic [ref=e1306]: onoffmix
+                  - img [ref=e1307]
+            - generic [ref=e1311] [cursor=pointer]:
+              - generic [ref=e1313]: "[MBC] 버추얼 팬덤 플랫폼 테크 전문가 양성과정 교육생 모집"
+              - generic [ref=e1314]:
+                - generic [ref=e1315]:
+                  - img [ref=e1316]
+                  - generic [ref=e1319]: 장소 미정
+                - generic [ref=e1320]:
+                  - generic [ref=e1321]: "#테크"
+                  - generic [ref=e1322]: "#tech"
+                - generic [ref=e1323]:
+                  - generic [ref=e1324]: onoffmix
+                  - img [ref=e1325]
+            - generic [ref=e1329] [cursor=pointer]:
+              - generic [ref=e1331]: 「2026 관광플러스테크」 참여기업 모집
+              - generic [ref=e1332]:
+                - generic [ref=e1333]:
+                  - img [ref=e1334]
+                  - generic [ref=e1337]: 장소 미정
+                - generic [ref=e1338]:
+                  - generic [ref=e1339]: "#테크"
+                  - generic [ref=e1340]: "#tech"
+                - generic [ref=e1341]:
+                  - generic [ref=e1342]: onoffmix
+                  - img [ref=e1343]
+            - generic [ref=e1347] [cursor=pointer]:
+              - generic [ref=e1349]: 제23회 대한민국 교육박람회
+              - generic [ref=e1350]:
+                - generic [ref=e1351]:
+                  - img [ref=e1352]
+                  - generic [ref=e1355]: 장소 미정
+                - generic [ref=e1356]:
+                  - generic [ref=e1357]: "#테크"
+                  - generic [ref=e1358]: "#tech"
+                - generic [ref=e1359]:
+                  - generic [ref=e1360]: onoffmix
+                  - img [ref=e1361]
+            - generic [ref=e1365] [cursor=pointer]:
+              - generic [ref=e1367]: 2026 재테크 문화시대
+              - generic [ref=e1368]:
+                - generic [ref=e1369]:
+                  - img [ref=e1370]
+                  - generic [ref=e1373]: 장소 미정
+                - generic [ref=e1374]:
+                  - generic [ref=e1375]: "#테크"
+                  - generic [ref=e1376]: "#tech"
+                - generic [ref=e1377]:
+                  - generic [ref=e1378]: onoffmix
+                  - img [ref=e1379]
+            - generic [ref=e1383] [cursor=pointer]:
+              - generic [ref=e1385]: "[돈 공부] 돈의 비밀 공식"
+              - generic [ref=e1386]:
+                - generic [ref=e1387]:
+                  - img [ref=e1388]
+                  - generic [ref=e1391]: 장소 미정
+                - generic [ref=e1392]:
+                  - generic [ref=e1393]: "#테크"
+                  - generic [ref=e1394]: "#tech"
+                - generic [ref=e1395]:
+                  - generic [ref=e1396]: onoffmix
+                  - img [ref=e1397]
+            - generic [ref=e1401] [cursor=pointer]:
+              - generic [ref=e1403]: "[부동산 공부] 아무도 알려주지 않은 부동산 기초 지식"
+              - generic [ref=e1404]:
+                - generic [ref=e1405]:
+                  - img [ref=e1406]
+                  - generic [ref=e1409]: 장소 미정
+                - generic [ref=e1410]:
+                  - generic [ref=e1411]: "#테크"
+                  - generic [ref=e1412]: "#tech"
+                - generic [ref=e1413]:
+                  - generic [ref=e1414]: onoffmix
+                  - img [ref=e1415]
+            - generic [ref=e1419] [cursor=pointer]:
+              - generic [ref=e1421]: 이래도 되나 싶을 정도로 쉬운 재테크
+              - generic [ref=e1422]:
+                - generic [ref=e1423]:
+                  - img [ref=e1424]
+                  - generic [ref=e1427]: 장소 미정
+                - generic [ref=e1428]:
+                  - generic [ref=e1429]: "#테크"
+                  - generic [ref=e1430]: "#tech"
+                - generic [ref=e1431]:
+                  - generic [ref=e1432]: onoffmix
+                  - img [ref=e1433]
+            - generic [ref=e1437] [cursor=pointer]:
+              - generic [ref=e1439]: "[핀테크 + 풀스택] 핀테크 서비스를 위한 풀스택 개발자 양성과정"
+              - generic [ref=e1440]:
+                - generic [ref=e1441]:
+                  - img [ref=e1442]
+                  - generic [ref=e1445]: 장소 미정
+                - generic [ref=e1446]:
+                  - generic [ref=e1447]: "#테크"
+                  - generic [ref=e1448]: "#tech"
+                - generic [ref=e1449]:
+                  - generic [ref=e1450]: onoffmix
+                  - img [ref=e1451]
+            - generic [ref=e1455] [cursor=pointer]:
+              - generic [ref=e1457]: "[핀테크 + 풀스택] 핀테크 서비스를 위한 풀스택 개발자 양성과정"
+              - generic [ref=e1458]:
+                - generic [ref=e1459]:
+                  - img [ref=e1460]
+                  - generic [ref=e1463]: 장소 미정
+                - generic [ref=e1464]:
+                  - generic [ref=e1465]: "#테크"
+                  - generic [ref=e1466]: "#tech"
+                - generic [ref=e1467]:
+                  - generic [ref=e1468]: onoffmix
+                  - img [ref=e1469]
+            - generic [ref=e1473] [cursor=pointer]:
+              - generic [ref=e1475]: "[핀테크 + 풀스택] 핀테크 서비스를 위한 풀스택 개발자 양성과정"
+              - generic [ref=e1476]:
+                - generic [ref=e1477]:
+                  - img [ref=e1478]
+                  - generic [ref=e1481]: 장소 미정
+                - generic [ref=e1482]:
+                  - generic [ref=e1483]: "#테크"
+                  - generic [ref=e1484]: "#tech"
+                - generic [ref=e1485]:
+                  - generic [ref=e1486]: onoffmix
+                  - img [ref=e1487]
+            - generic [ref=e1491] [cursor=pointer]:
+              - generic [ref=e1493]: "[핀테크 + 풀스택] 핀테크 서비스를 위한 풀스택 개발자 양성과정"
+              - generic [ref=e1494]:
+                - generic [ref=e1495]:
+                  - img [ref=e1496]
+                  - generic [ref=e1499]: 장소 미정
+                - generic [ref=e1500]:
+                  - generic [ref=e1501]: "#테크"
+                  - generic [ref=e1502]: "#tech"
+                - generic [ref=e1503]:
+                  - generic [ref=e1504]: onoffmix
+                  - img [ref=e1505]
+            - generic [ref=e1509] [cursor=pointer]:
+              - generic [ref=e1511]: 2026 팁스밋업(바이오· 헬스케어)
+              - generic [ref=e1512]:
+                - generic [ref=e1513]:
+                  - img [ref=e1514]
+                  - generic [ref=e1517]: 장소 미정
+                - generic [ref=e1519]: "#네트워킹"
+                - generic [ref=e1520]:
+                  - generic [ref=e1521]: onoffmix
+                  - img [ref=e1522]
+            - generic [ref=e1526] [cursor=pointer]:
+              - generic [ref=e1528]: "[실시간밀착케어] 수료생 전원 인턴십 기회 100% 보장되는 게임개발초격차캠프"
+              - generic [ref=e1529]:
+                - generic [ref=e1530]:
+                  - img [ref=e1531]
+                  - generic [ref=e1534]: 장소 미정
+                - generic [ref=e1536]: "#네트워킹"
+                - generic [ref=e1537]:
+                  - generic [ref=e1538]: onoffmix
+                  - img [ref=e1539]
+            - generic [ref=e1543] [cursor=pointer]:
+              - generic [ref=e1545]: IT 커리어 성장 기회, 스위프 앱 3기 데모데이 & 네트워킹 행사 (무료, 1/24 토)
+              - generic [ref=e1546]:
+                - generic [ref=e1547]:
+                  - img [ref=e1548]
+                  - generic [ref=e1551]: 장소 미정
+                - generic [ref=e1553]: "#네트워킹"
+                - generic [ref=e1554]:
+                  - generic [ref=e1555]: onoffmix
+                  - img [ref=e1556]
+            - generic [ref=e1560] [cursor=pointer]:
+              - generic [ref=e1562]: 홍릉강소특구 Scale-up 네트워킹 데이
+              - generic [ref=e1563]:
+                - generic [ref=e1564]:
+                  - img [ref=e1565]
+                  - generic [ref=e1568]: 장소 미정
+                - generic [ref=e1570]: "#네트워킹"
+                - generic [ref=e1571]:
+                  - generic [ref=e1572]: onoffmix
+                  - img [ref=e1573]
+            - generic [ref=e1577] [cursor=pointer]:
+              - generic [ref=e1579]: 홍릉강소특구 Scale-up 네트워킹 데이
+              - generic [ref=e1580]:
+                - generic [ref=e1581]:
+                  - img [ref=e1582]
+                  - generic [ref=e1585]: 장소 미정
+                - generic [ref=e1587]: "#네트워킹"
+                - generic [ref=e1588]:
+                  - generic [ref=e1589]: onoffmix
+                  - img [ref=e1590]
+            - generic [ref=e1594] [cursor=pointer]:
+              - generic [ref=e1596]: AI Connect Seoul 2026 | Azure & AI Training Day
+              - generic [ref=e1597]:
+                - generic [ref=e1598]:
+                  - img [ref=e1599]
+                  - generic [ref=e1602]: 장소 미정
+                - generic [ref=e1604]: "#네트워킹"
+                - generic [ref=e1605]:
+                  - generic [ref=e1606]: onoffmix
+                  - img [ref=e1607]
+            - generic [ref=e1611] [cursor=pointer]:
+              - generic [ref=e1613]: Polymerize Growth Summit 2026 :AI 기반 소재 연구·개발(R&D)
+              - generic [ref=e1614]:
+                - generic [ref=e1615]:
+                  - img [ref=e1616]
+                  - generic [ref=e1619]: 장소 미정
+                - generic [ref=e1621]: "#네트워킹"
+                - generic [ref=e1622]:
+                  - generic [ref=e1623]: onoffmix
+                  - img [ref=e1624]
+            - generic [ref=e1628] [cursor=pointer]:
+              - generic [ref=e1630]: 제90기 한경협(구.전경련) 최고경영자과정
+              - generic [ref=e1631]:
+                - generic [ref=e1632]:
+                  - img [ref=e1633]
+                  - generic [ref=e1636]: 장소 미정
+                - generic [ref=e1638]: "#네트워킹"
+                - generic [ref=e1639]:
+                  - generic [ref=e1640]: onoffmix
+                  - img [ref=e1641]
+            - generic [ref=e1645] [cursor=pointer]:
+              - generic [ref=e1647]: "[국비교육][멋쟁이사자처럼] 재직자 : UXUI 딥다이브 디자인 5기"
+              - generic [ref=e1648]:
+                - generic [ref=e1649]:
+                  - img [ref=e1650]
+                  - generic [ref=e1653]: 장소 미정
+                - generic [ref=e1655]: "#네트워킹"
+                - generic [ref=e1656]:
+                  - generic [ref=e1657]: onoffmix
+                  - img [ref=e1658]
+            - generic [ref=e1662] [cursor=pointer]:
+              - generic [ref=e1664]: 2025년 경기 스타트업 글로벌 성장지원 「미국 샌프란시스코 투자유치 지원 프로그램」
+              - generic [ref=e1665]:
+                - generic [ref=e1666]:
+                  - img [ref=e1667]
+                  - generic [ref=e1670]: 장소 미정
+                - generic [ref=e1672]: "#네트워킹"
+                - generic [ref=e1673]:
+                  - generic [ref=e1674]: onoffmix
+                  - img [ref=e1675]
+            - generic [ref=e1679] [cursor=pointer]:
+              - generic [ref=e1681]: "프라이빗 소셜 북 클럽 페이지 애프터: 양재천변 분위기 좋은 스튜디오에서 열리는 독서모임"
+              - generic [ref=e1682]:
+                - generic [ref=e1683]:
+                  - img [ref=e1684]
+                  - generic [ref=e1687]: 장소 미정
+                - generic [ref=e1689]: "#네트워킹"
+                - generic [ref=e1690]:
+                  - generic [ref=e1691]: onoffmix
+                  - img [ref=e1692]
+            - generic [ref=e1696] [cursor=pointer]:
+              - generic [ref=e1698]: 2026 조직문화 담당자를 위한 월례포럼 무료 멤버십
+              - generic [ref=e1699]:
+                - generic [ref=e1700]:
+                  - img [ref=e1701]
+                  - generic [ref=e1704]: 장소 미정
+                - generic [ref=e1706]: "#네트워킹"
+                - generic [ref=e1707]:
+                  - generic [ref=e1708]: onoffmix
+                  - img [ref=e1709]
+            - generic [ref=e1713] [cursor=pointer]:
+              - generic [ref=e1715]: "[조기마감 예상] 인턴십 기회가 보장되는 AI 헬스케어 초격차캠프"
+              - generic [ref=e1716]:
+                - generic [ref=e1717]:
+                  - img [ref=e1718]
+                  - generic [ref=e1721]: 장소 미정
+                - generic [ref=e1723]: "#해커톤"
+                - generic [ref=e1724]:
+                  - generic [ref=e1725]: onoffmix
+                  - img [ref=e1726]
+            - generic [ref=e1730] [cursor=pointer]:
+              - generic [ref=e1732]: "[한국핀테크지원센터 X 구름] 핀테크 인턴십 코스 풀스택 개발자 과정"
+              - generic [ref=e1733]:
+                - generic [ref=e1734]:
+                  - img [ref=e1735]
+                  - generic [ref=e1738]: 장소 미정
+                - generic [ref=e1740]: "#해커톤"
+                - generic [ref=e1741]:
+                  - generic [ref=e1742]: onoffmix
+                  - img [ref=e1743]
+            - generic [ref=e1747] [cursor=pointer]:
+              - generic [ref=e1749]: "[한국핀테크지원센터 X 구름] 핀테크 인턴십 코스 서비스 기획자 과정"
+              - generic [ref=e1750]:
+                - generic [ref=e1751]:
+                  - img [ref=e1752]
+                  - generic [ref=e1755]: 장소 미정
+                - generic [ref=e1757]: "#해커톤"
+                - generic [ref=e1758]:
+                  - generic [ref=e1759]: onoffmix
+                  - img [ref=e1760]
+            - generic [ref=e1764] [cursor=pointer]:
+              - generic [ref=e1766]: "[한국핀테크지원센터 X 구름] 핀테크 인턴십 코스 서비스 기획자 과정"
+              - generic [ref=e1767]:
+                - generic [ref=e1768]:
+                  - img [ref=e1769]
+                  - generic [ref=e1772]: 장소 미정
+                - generic [ref=e1774]: "#해커톤"
+                - generic [ref=e1775]:
+                  - generic [ref=e1776]: onoffmix
+                  - img [ref=e1777]
+            - generic [ref=e1781] [cursor=pointer]:
+              - generic [ref=e1783]: "[한국핀테크지원센터 X 구름] 핀테크 인턴십 코스 풀스택 개발자 과정"
+              - generic [ref=e1784]:
+                - generic [ref=e1785]:
+                  - img [ref=e1786]
+                  - generic [ref=e1789]: 장소 미정
+                - generic [ref=e1791]: "#해커톤"
+                - generic [ref=e1792]:
+                  - generic [ref=e1793]: onoffmix
+                  - img [ref=e1794]
+            - generic [ref=e1798] [cursor=pointer]:
+              - generic [ref=e1800]: 제4회 2026 블레이버스 MVP 개발 해커톤
+              - generic [ref=e1801]:
+                - generic [ref=e1802]:
+                  - img [ref=e1803]
+                  - generic [ref=e1806]: 장소 미정
+                - generic [ref=e1808]: "#해커톤"
+                - generic [ref=e1809]:
+                  - generic [ref=e1810]: onoffmix
+                  - img [ref=e1811]
+            - generic [ref=e1815] [cursor=pointer]:
+              - generic [ref=e1817]: "2026 서강대 AI 겨울캠프 : n8n을 이용한 Agent 개발 미니 해커톤"
+              - generic [ref=e1818]:
+                - generic [ref=e1819]:
+                  - img [ref=e1820]
+                  - generic [ref=e1823]: 장소 미정
+                - generic [ref=e1825]: "#해커톤"
+                - generic [ref=e1826]:
+                  - generic [ref=e1827]: onoffmix
+                  - img [ref=e1828]
+            - generic [ref=e1832] [cursor=pointer]:
+              - generic [ref=e1834]: "[패스트캠퍼스] 2026 Fast Builderthon : AI 해커톤 모집 (~1/16)"
+              - generic [ref=e1835]:
+                - generic [ref=e1836]:
+                  - img [ref=e1837]
+                  - generic [ref=e1840]: 장소 미정
+                - generic [ref=e1842]: "#해커톤"
+                - generic [ref=e1843]:
+                  - generic [ref=e1844]: onoffmix
+                  - img [ref=e1845]
+            - generic [ref=e1849] [cursor=pointer]:
+              - generic [ref=e1851]: 2026 미래도서관 정책 아이디어 해커톤대회
+              - generic [ref=e1852]:
+                - generic [ref=e1853]:
+                  - img [ref=e1854]
+                  - generic [ref=e1857]: 장소 미정
+                - generic [ref=e1859]: "#해커톤"
+                - generic [ref=e1860]:
+                  - generic [ref=e1861]: onoffmix
+                  - img [ref=e1862]
+            - generic [ref=e1866] [cursor=pointer]:
+              - generic [ref=e1868]: 제주·AWS 글로벌 챌린지 해커톤
+              - generic [ref=e1869]:
+                - generic [ref=e1870]:
+                  - img [ref=e1871]
+                  - generic [ref=e1874]: 장소 미정
+                - generic [ref=e1876]: "#해커톤"
+                - generic [ref=e1877]:
+                  - generic [ref=e1878]: onoffmix
+                  - img [ref=e1879]
+            - generic [ref=e1883] [cursor=pointer]:
+              - generic [ref=e1885]: "[구름톤 딥다이브] IT 개발자 과정 7월 개강반 모집"
+              - generic [ref=e1886]:
+                - generic [ref=e1887]:
+                  - img [ref=e1888]
+                  - generic [ref=e1891]: 장소 미정
+                - generic [ref=e1893]: "#해커톤"
+                - generic [ref=e1894]:
+                  - generic [ref=e1895]: onoffmix
+                  - img [ref=e1896]
+            - generic [ref=e1900] [cursor=pointer]:
+              - generic [ref=e1902]: "[SK쉴더스] 화이트해커 전문인력 양성과정 (~10/9)"
+              - generic [ref=e1903]:
+                - generic [ref=e1904]:
+                  - img [ref=e1905]
+                  - generic [ref=e1908]: 장소 미정
+                - generic [ref=e1910]: "#해커톤"
+                - generic [ref=e1911]:
+                  - generic [ref=e1912]: onoffmix
+                  - img [ref=e1913]
+            - generic [ref=e1917] [cursor=pointer]:
+              - generic [ref=e1919]: "[국비교육 전액무료]클라우드 보안엔지니어(화이트해커) 양성"
+              - generic [ref=e1920]:
+                - generic [ref=e1921]:
+                  - img [ref=e1922]
+                  - generic [ref=e1925]: 장소 미정
+                - generic [ref=e1927]: "#해커톤"
+                - generic [ref=e1928]:
+                  - generic [ref=e1929]: onoffmix
+                  - img [ref=e1930]
+            - generic [ref=e1934] [cursor=pointer]:
+              - generic [ref=e1936]: "[국비교육 전액무료]AI활용 클라우드 보안엔지니어(화이트해커) 양성"
+              - generic [ref=e1937]:
+                - generic [ref=e1938]:
+                  - img [ref=e1939]
+                  - generic [ref=e1942]: 장소 미정
+                - generic [ref=e1944]: "#해커톤"
+                - generic [ref=e1945]:
+                  - generic [ref=e1946]: onoffmix
+                  - img [ref=e1947]
+            - generic [ref=e1951] [cursor=pointer]:
+              - generic [ref=e1953]: 서울 신림 화이트해커 해킹 보안 국비지원 부트캠프 학원 취업연계 교육
+              - generic [ref=e1954]:
+                - generic [ref=e1955]:
+                  - img [ref=e1956]
+                  - generic [ref=e1959]: 장소 미정
+                - generic [ref=e1961]: "#해커톤"
+                - generic [ref=e1962]:
+                  - generic [ref=e1963]: onoffmix
+                  - img [ref=e1964]
+            - generic [ref=e1968] [cursor=pointer]:
+              - generic [ref=e1970]: "[kt cloud x goorm] 프론트엔드 개발자 과정 모집"
+              - generic [ref=e1971]:
+                - generic [ref=e1972]:
+                  - img [ref=e1973]
+                  - generic [ref=e1976]: 장소 미정
+                - generic [ref=e1978]: "#해커톤"
+                - generic [ref=e1979]:
+                  - generic [ref=e1980]: onoffmix
+                  - img [ref=e1981]
+            - generic [ref=e1985] [cursor=pointer]:
+              - generic [ref=e1987]: "[kt cloud x goorm] 프론트엔드 개발자 과정 모집"
+              - generic [ref=e1988]:
+                - generic [ref=e1989]:
+                  - img [ref=e1990]
+                  - generic [ref=e1993]: 장소 미정
+                - generic [ref=e1995]: "#해커톤"
+                - generic [ref=e1996]:
+                  - generic [ref=e1997]: onoffmix
+                  - img [ref=e1998]
+            - generic [ref=e2002] [cursor=pointer]:
+              - generic [ref=e2004]: "AWSKRUG 데브옵스 #DevOps 소모임 20번째 밋업 - re:Invent reCap 1월 14일 (수)"
+              - generic [ref=e2005]:
+                - generic [ref=e2006]:
+                  - img [ref=e2007]
+                  - generic [ref=e2010]: 온라인
+                - generic [ref=e2012]: "#tech"
+                - generic [ref=e2013]:
+                  - generic [ref=e2014]: meetup
+                  - img [ref=e2015]
+            - generic [ref=e2019] [cursor=pointer]:
+              - generic [ref=e2021]: "AWSKRUG 데브옵스 #DevOps 소모임 20번째 밋업 - re:Invent reCap 1월 14일 (수)"
+              - generic [ref=e2022]:
+                - generic [ref=e2023]:
+                  - img [ref=e2024]
+                  - generic [ref=e2027]: 온라인
+                - generic [ref=e2029]: "#startup"
+                - generic [ref=e2030]:
+                  - generic [ref=e2031]: meetup
+                  - img [ref=e2032]
+        - generic [ref=e2036]:
+          - heading "2026년 1월 15일 목 3" [level=2] [ref=e2037]:
+            - img [ref=e2038]
+            - text: 2026년 1월 15일 목
+            - generic [ref=e2040]: "3"
+          - generic [ref=e2041]:
+            - generic [ref=e2042] [cursor=pointer]:
+              - generic [ref=e2044]: Silicon Valley Business Networking (Online)
+              - generic [ref=e2045]:
+                - generic [ref=e2046]:
+                  - img [ref=e2047]
+                  - generic [ref=e2050]: 온라인
+                - generic [ref=e2052]: "#startup"
+                - generic [ref=e2053]:
+                  - generic [ref=e2054]: meetup
+                  - img [ref=e2055]
+            - generic [ref=e2059] [cursor=pointer]:
+              - generic [ref=e2061]: Happy Seina's Japanese Meetup 🇯🇵 행복한 세이나 의 일본어 모임
+              - generic [ref=e2062]:
+                - generic [ref=e2063]:
+                  - img [ref=e2064]
+                  - generic [ref=e2067]: 온라인
+                - generic [ref=e2069]: "#tech"
+                - generic [ref=e2070]:
+                  - generic [ref=e2071]: meetup
+                  - img [ref=e2072]
+            - generic [ref=e2076] [cursor=pointer]:
+              - generic [ref=e2078]: Happy Seina's Japanese Meetup 🇯🇵 행복한 세이나 의 일본어 모임
+              - generic [ref=e2079]:
+                - generic [ref=e2080]:
+                  - img [ref=e2081]
+                  - generic [ref=e2084]: 온라인
+                - generic [ref=e2086]: "#AI"
+                - generic [ref=e2087]:
+                  - generic [ref=e2088]: meetup
+                  - img [ref=e2089]
+        - generic [ref=e2093]:
+          - heading "2026년 1월 16일 금 3" [level=2] [ref=e2094]:
+            - img [ref=e2095]
+            - text: 2026년 1월 16일 금
+            - generic [ref=e2097]: "3"
+          - generic [ref=e2098]:
+            - generic [ref=e2099] [cursor=pointer]:
+              - generic [ref=e2101]: "[WeWork Labs YDS] Weekly Stand Up"
+              - generic [ref=e2102]:
+                - generic [ref=e2103]:
+                  - img [ref=e2104]
+                  - generic [ref=e2107]: 온라인
+                - generic [ref=e2109]: "#startup"
+                - generic [ref=e2110]:
+                  - generic [ref=e2111]: meetup
+                  - img [ref=e2112]
+            - generic [ref=e2116] [cursor=pointer]:
+              - generic [ref=e2118]: "[InnerCircle]Inner Council & The Circle of Deceit"
+              - generic [ref=e2119]:
+                - generic [ref=e2120]:
+                  - img [ref=e2121]
+                  - generic [ref=e2124]: 온라인
+                - generic [ref=e2126]: "#tech"
+                - generic [ref=e2127]:
+                  - generic [ref=e2128]: meetup
+                  - img [ref=e2129]
+            - generic [ref=e2133] [cursor=pointer]:
+              - generic [ref=e2135]: Speechcraft Workshop (For Non-Toastmasters)
+              - generic [ref=e2136]:
+                - generic [ref=e2137]:
+                  - img [ref=e2138]
+                  - generic [ref=e2141]: 온라인
+                - generic [ref=e2143]: "#tech"
+                - generic [ref=e2144]:
+                  - generic [ref=e2145]: meetup
+                  - img [ref=e2146]
+        - generic [ref=e2150]:
+          - heading "2026년 1월 17일 토 6" [level=2] [ref=e2151]:
+            - img [ref=e2152]
+            - text: 2026년 1월 17일 토
+            - generic [ref=e2154]: "6"
+          - generic [ref=e2155]:
+            - generic [ref=e2156] [cursor=pointer]:
+              - generic [ref=e2158]: "Founders Running Club :: Seoul"
+              - generic [ref=e2159]:
+                - generic [ref=e2160]:
+                  - img [ref=e2161]
+                  - generic [ref=e2164]: 온라인
+                - generic [ref=e2166]: "#startup"
+                - generic [ref=e2167]:
+                  - generic [ref=e2168]: meetup
+                  - img [ref=e2169]
+            - generic [ref=e2173] [cursor=pointer]:
+              - generic [ref=e2175]: "Let's Discuss an Article! Topic: U.S. Economy with AI"
+              - generic [ref=e2176]:
+                - generic [ref=e2177]:
+                  - img [ref=e2178]
+                  - generic [ref=e2181]: 온라인
+                - generic [ref=e2183]: "#AI"
+                - generic [ref=e2184]:
+                  - generic [ref=e2185]: meetup
+                  - img [ref=e2186]
+            - generic [ref=e2190] [cursor=pointer]:
+              - generic [ref=e2192]: "AI Builders Seoul: Unleashing the Power of AI - Part II"
+              - generic [ref=e2193]:
+                - generic [ref=e2194]:
+                  - img [ref=e2195]
+                  - generic [ref=e2198]: 온라인
+                - generic [ref=e2200]: "#tech"
+                - generic [ref=e2201]:
+                  - generic [ref=e2202]: meetup
+                  - img [ref=e2203]
+            - generic [ref=e2207] [cursor=pointer]:
+              - generic [ref=e2209]: "AI Builders Seoul: Unleashing the Power of AI - Part II"
+              - generic [ref=e2210]:
+                - generic [ref=e2211]:
+                  - img [ref=e2212]
+                  - generic [ref=e2215]: 온라인
+                - generic [ref=e2217]: "#AI"
+                - generic [ref=e2218]:
+                  - generic [ref=e2219]: meetup
+                  - img [ref=e2220]
+            - generic [ref=e2224] [cursor=pointer]:
+              - generic [ref=e2226]: "[InnerCircle]Saturday Super fun board games/Language Exchange"
+              - generic [ref=e2227]:
+                - generic [ref=e2228]:
+                  - img [ref=e2229]
+                  - generic [ref=e2232]: 온라인
+                - generic [ref=e2234]: "#tech"
+                - generic [ref=e2235]:
+                  - generic [ref=e2236]: meetup
+                  - img [ref=e2237]
+            - generic [ref=e2241] [cursor=pointer]:
+              - generic [ref=e2243]: "[InnerCircle]Saturday Super fun board games/Language Exchange"
+              - generic [ref=e2244]:
+                - generic [ref=e2245]:
+                  - img [ref=e2246]
+                  - generic [ref=e2249]: 온라인
+                - generic [ref=e2251]: "#AI"
+                - generic [ref=e2252]:
+                  - generic [ref=e2253]: meetup
+                  - img [ref=e2254]
+        - generic [ref=e2258]:
+          - heading "2026년 1월 18일 일 2" [level=2] [ref=e2259]:
+            - img [ref=e2260]
+            - text: 2026년 1월 18일 일
+            - generic [ref=e2262]: "2"
+          - generic [ref=e2263]:
+            - generic [ref=e2264] [cursor=pointer]:
+              - generic [ref=e2266]: AWSKRUG Women In Cloud (온라인) ⚡️그래도 가고 싶다면 <해외취업 전략 - 캐나다>
+              - generic [ref=e2267]:
+                - generic [ref=e2268]:
+                  - img [ref=e2269]
+                  - generic [ref=e2272]: 온라인
+                - generic [ref=e2274]: "#tech"
+                - generic [ref=e2275]:
+                  - generic [ref=e2276]: meetup
+                  - img [ref=e2277]
+            - generic [ref=e2281] [cursor=pointer]:
+              - generic [ref=e2283]: "[InnerCircle]Sunday Funday Play Boardgames & Language exchange"
+              - generic [ref=e2284]:
+                - generic [ref=e2285]:
+                  - img [ref=e2286]
+                  - generic [ref=e2289]: 온라인
+                - generic [ref=e2291]: "#tech"
+                - generic [ref=e2292]:
+                  - generic [ref=e2293]: meetup
+                  - img [ref=e2294]
+        - generic [ref=e2298]:
+          - heading "2026년 1월 19일 월 2" [level=2] [ref=e2299]:
+            - img [ref=e2300]
+            - text: 2026년 1월 19일 월
+            - generic [ref=e2302]: "2"
+          - generic [ref=e2303]:
+            - generic [ref=e2304] [cursor=pointer]:
+              - generic [ref=e2306]: Deep Work Monday @Seoul Startup Hub in Gongdeok(孔德)
+              - generic [ref=e2307]:
+                - generic [ref=e2308]:
+                  - img [ref=e2309]
+                  - generic [ref=e2312]: 온라인
+                - generic [ref=e2314]: "#tech"
+                - generic [ref=e2315]:
+                  - generic [ref=e2316]: meetup
+                  - img [ref=e2317]
+            - generic [ref=e2321] [cursor=pointer]:
+              - generic [ref=e2323]: Deep Work Monday @Seoul Startup Hub in Gongdeok(孔德)
+              - generic [ref=e2324]:
+                - generic [ref=e2325]:
+                  - img [ref=e2326]
+                  - generic [ref=e2329]: 온라인
+                - generic [ref=e2331]: "#startup"
+                - generic [ref=e2332]:
+                  - generic [ref=e2333]: meetup
+                  - img [ref=e2334]
+        - generic [ref=e2338]:
+          - heading "2026년 1월 20일 화 5" [level=2] [ref=e2339]:
+            - img [ref=e2340]
+            - text: 2026년 1월 20일 화
+            - generic [ref=e2342]: "5"
+          - generic [ref=e2343]:
+            - generic [ref=e2344] [cursor=pointer]:
+              - generic [ref=e2346]: Silicon Valley Business Networking (Online)
+              - generic [ref=e2347]:
+                - generic [ref=e2348]:
+                  - img [ref=e2349]
+                  - generic [ref=e2352]: 온라인
+                - generic [ref=e2354]: "#startup"
+                - generic [ref=e2355]:
+                  - generic [ref=e2356]: meetup
+                  - img [ref=e2357]
+            - generic [ref=e2361] [cursor=pointer]:
+              - generic [ref=e2363]: Tech + AI people Diner with Boardgame
+              - generic [ref=e2364]:
+                - generic [ref=e2365]:
+                  - img [ref=e2366]
+                  - generic [ref=e2369]: 온라인
+                - generic [ref=e2371]: "#tech"
+                - generic [ref=e2372]:
+                  - generic [ref=e2373]: meetup
+                  - img [ref=e2374]
+            - generic [ref=e2378] [cursor=pointer]:
+              - generic [ref=e2380]: Tech + AI people Diner with Boardgame
+              - generic [ref=e2381]:
+                - generic [ref=e2382]:
+                  - img [ref=e2383]
+                  - generic [ref=e2386]: 온라인
+                - generic [ref=e2388]: "#startup"
+                - generic [ref=e2389]:
+                  - generic [ref=e2390]: meetup
+                  - img [ref=e2391]
+            - generic [ref=e2395] [cursor=pointer]:
+              - generic [ref=e2397]: Tech + AI people Diner with Boardgame
+              - generic [ref=e2398]:
+                - generic [ref=e2399]:
+                  - img [ref=e2400]
+                  - generic [ref=e2403]: 온라인
+                - generic [ref=e2405]: "#AI"
+                - generic [ref=e2406]:
+                  - generic [ref=e2407]: meetup
+                  - img [ref=e2408]
+            - generic [ref=e2412] [cursor=pointer]:
+              - generic [ref=e2414]: Algorithms Study Group!
+              - generic [ref=e2415]:
+                - generic [ref=e2416]:
+                  - img [ref=e2417]
+                  - generic [ref=e2420]: 온라인
+                - generic [ref=e2422]: "#tech"
+                - generic [ref=e2423]:
+                  - generic [ref=e2424]: meetup
+                  - img [ref=e2425]
+        - generic [ref=e2429]:
+          - heading "2026년 1월 21일 수 7" [level=2] [ref=e2430]:
+            - img [ref=e2431]
+            - text: 2026년 1월 21일 수
+            - generic [ref=e2433]: "7"
+          - generic [ref=e2434]:
+            - generic [ref=e2435] [cursor=pointer]:
+              - generic [ref=e2437]: "Brainstorm a Great Startup Idea for 2026: Online Workshop"
+              - generic [ref=e2438]:
+                - generic [ref=e2439]:
+                  - img [ref=e2440]
+                  - generic [ref=e2443]: 온라인
+                - generic [ref=e2445]: "#startup"
+                - generic [ref=e2446]:
+                  - generic [ref=e2447]: meetup
+                  - img [ref=e2448]
+            - generic [ref=e2452] [cursor=pointer]:
+              - generic [ref=e2454]: How to Strategize and Execute Your Job Search with ChatGPT in One Hour
+              - generic [ref=e2455]:
+                - generic [ref=e2456]:
+                  - img [ref=e2457]
+                  - generic [ref=e2460]: 온라인
+                - generic [ref=e2462]: "#startup"
+                - generic [ref=e2463]:
+                  - generic [ref=e2464]: meetup
+                  - img [ref=e2465]
+            - generic [ref=e2469] [cursor=pointer]:
+              - generic [ref=e2471]: "[GroMeetUp] Sonatype Nexus repo를 중심으로 본 Hugging Face 오픈소스 AI 모델 취약점과 NPM 공격사례"
+              - generic [ref=e2472]:
+                - generic [ref=e2473]:
+                  - img [ref=e2474]
+                  - generic [ref=e2477]: 온라인
+                - generic [ref=e2479]: "#tech"
+                - generic [ref=e2480]:
+                  - generic [ref=e2481]: meetup
+                  - img [ref=e2482]
+            - generic [ref=e2486] [cursor=pointer]:
+              - generic [ref=e2488]: "[GroMeetUp] Sonatype Nexus repo를 중심으로 본 Hugging Face 오픈소스 AI 모델 취약점과 NPM 공격사례"
+              - generic [ref=e2489]:
+                - generic [ref=e2490]:
+                  - img [ref=e2491]
+                  - generic [ref=e2494]: 온라인
+                - generic [ref=e2496]: "#AI"
+                - generic [ref=e2497]:
+                  - generic [ref=e2498]: meetup
+                  - img [ref=e2499]
+            - generic [ref=e2503] [cursor=pointer]:
+              - generic [ref=e2505]: "snowflake AI DATA TALK WEBINAR_Data To Action : Agentic AI 시대를 위한 데이터 전략"
+              - generic [ref=e2506]:
+                - generic [ref=e2507]:
+                  - img [ref=e2508]
+                  - generic [ref=e2511]: 온라인
+                - generic [ref=e2513]: "#tech"
+                - generic [ref=e2514]:
+                  - generic [ref=e2515]: meetup
+                  - img [ref=e2516]
+            - generic [ref=e2520] [cursor=pointer]:
+              - generic [ref=e2522]: "snowflake AI DATA TALK WEBINAR_Data To Action : Agentic AI 시대를 위한 데이터 전략"
+              - generic [ref=e2523]:
+                - generic [ref=e2524]:
+                  - img [ref=e2525]
+                  - generic [ref=e2528]: 온라인
+                - generic [ref=e2530]: "#AI"
+                - generic [ref=e2531]:
+                  - generic [ref=e2532]: meetup
+                  - img [ref=e2533]
+            - generic [ref=e2537] [cursor=pointer]:
+              - generic [ref=e2539]: "AWSKRUG #Beginner 모임 - AWS Network 기초 이론과 Hands-on Lab (1월 21일)"
+              - generic [ref=e2540]:
+                - generic [ref=e2541]:
+                  - img [ref=e2542]
+                  - generic [ref=e2545]: 온라인
+                - generic [ref=e2547]: "#tech"
+                - generic [ref=e2548]:
+                  - generic [ref=e2549]: meetup
+                  - img [ref=e2550]
+        - generic [ref=e2554]:
+          - heading "2026년 1월 22일 목 2" [level=2] [ref=e2555]:
+            - img [ref=e2556]
+            - text: 2026년 1월 22일 목
+            - generic [ref=e2558]: "2"
+          - generic [ref=e2559]:
+            - generic [ref=e2560] [cursor=pointer]:
+              - generic [ref=e2562]: "AWSKRUG 보안 #Security 소모임 - 1월 22일 (목)"
+              - generic [ref=e2563]:
+                - generic [ref=e2564]:
+                  - img [ref=e2565]
+                  - generic [ref=e2568]: 온라인
+                - generic [ref=e2570]: "#tech"
+                - generic [ref=e2571]:
+                  - generic [ref=e2572]: meetup
+                  - img [ref=e2573]
+            - generic [ref=e2577] [cursor=pointer]:
+              - generic [ref=e2579]: "AWSKRUG 보안 #Security 소모임 - 1월 22일 (목)"
+              - generic [ref=e2580]:
+                - generic [ref=e2581]:
+                  - img [ref=e2582]
+                  - generic [ref=e2585]: 온라인
+                - generic [ref=e2587]: "#AI"
+                - generic [ref=e2588]:
+                  - generic [ref=e2589]: meetup
+                  - img [ref=e2590]
+        - generic [ref=e2594]:
+          - heading "2026년 1월 23일 금 1" [level=2] [ref=e2595]:
+            - img [ref=e2596]
+            - text: 2026년 1월 23일 금
+            - generic [ref=e2598]: "1"
+          - generic [ref=e2600] [cursor=pointer]:
+            - generic [ref=e2602]: "InnerCircle Connection Pick🤩 : Fun Drinking Party🥂"
+            - generic [ref=e2603]:
+              - generic [ref=e2604]:
+                - img [ref=e2605]
+                - generic [ref=e2608]: 온라인
+              - generic [ref=e2610]: "#AI"
+              - generic [ref=e2611]:
+                - generic [ref=e2612]: meetup
+                - img [ref=e2613]
+        - generic [ref=e2617]:
+          - heading "2026년 1월 24일 토 4" [level=2] [ref=e2618]:
+            - img [ref=e2619]
+            - text: 2026년 1월 24일 토
+            - generic [ref=e2621]: "4"
+          - generic [ref=e2622]:
+            - generic [ref=e2623] [cursor=pointer]:
+              - generic [ref=e2625]: AI Adoption Talk - Catch up with new trends in Artificial Intelligence (Gangnam)
+              - generic [ref=e2626]:
+                - generic [ref=e2627]:
+                  - img [ref=e2628]
+                  - generic [ref=e2631]: 온라인
+                - generic [ref=e2633]: "#tech"
+                - generic [ref=e2634]:
+                  - generic [ref=e2635]: meetup
+                  - img [ref=e2636]
+            - generic [ref=e2640] [cursor=pointer]:
+              - generic [ref=e2642]: AI Adoption Talk - Catch up with new trends in Artificial Intelligence (Gangnam)
+              - generic [ref=e2643]:
+                - generic [ref=e2644]:
+                  - img [ref=e2645]
+                  - generic [ref=e2648]: 온라인
+                - generic [ref=e2650]: "#startup"
+                - generic [ref=e2651]:
+                  - generic [ref=e2652]: meetup
+                  - img [ref=e2653]
+            - generic [ref=e2657] [cursor=pointer]:
+              - generic [ref=e2659]: AI Adoption Talk - Catch up with new trends in Artificial Intelligence (Gangnam)
+              - generic [ref=e2660]:
+                - generic [ref=e2661]:
+                  - img [ref=e2662]
+                  - generic [ref=e2665]: 온라인
+                - generic [ref=e2667]: "#AI"
+                - generic [ref=e2668]:
+                  - generic [ref=e2669]: meetup
+                  - img [ref=e2670]
+            - generic [ref=e2674] [cursor=pointer]:
+              - generic [ref=e2676]: AWS Community Builders Day 2026에 초대합니다!
+              - generic [ref=e2677]:
+                - generic [ref=e2678]:
+                  - img [ref=e2679]
+                  - generic [ref=e2682]: 온라인
+                - generic [ref=e2684]: "#tech"
+                - generic [ref=e2685]:
+                  - generic [ref=e2686]: meetup
+                  - img [ref=e2687]
+        - generic [ref=e2691]:
+          - heading "2026년 1월 26일 월 2" [level=2] [ref=e2692]:
+            - img [ref=e2693]
+            - text: 2026년 1월 26일 월
+            - generic [ref=e2695]: "2"
+          - generic [ref=e2696]:
+            - generic [ref=e2697] [cursor=pointer]:
+              - generic [ref=e2699]: AUSG Public BIGCHAT - 01.26(월)
+              - generic [ref=e2700]:
+                - generic [ref=e2701]:
+                  - img [ref=e2702]
+                  - generic [ref=e2705]: 온라인
+                - generic [ref=e2707]: "#tech"
+                - generic [ref=e2708]:
+                  - generic [ref=e2709]: meetup
+                  - img [ref=e2710]
+            - generic [ref=e2714] [cursor=pointer]:
+              - generic [ref=e2716]: AUSG Public BIGCHAT - 01.26(월)
+              - generic [ref=e2717]:
+                - generic [ref=e2718]:
+                  - img [ref=e2719]
+                  - generic [ref=e2722]: 온라인
+                - generic [ref=e2724]: "#AI"
+                - generic [ref=e2725]:
+                  - generic [ref=e2726]: meetup
+                  - img [ref=e2727]
+        - generic [ref=e2731]:
+          - heading "2026년 1월 27일 화 4" [level=2] [ref=e2732]:
+            - img [ref=e2733]
+            - text: 2026년 1월 27일 화
+            - generic [ref=e2735]: "4"
+          - generic [ref=e2736]:
+            - generic [ref=e2737] [cursor=pointer]:
+              - generic [ref=e2739]: "6 Weeks to Success: Build Real Career & Product Leverage in the AI Era"
+              - generic [ref=e2740]:
+                - generic [ref=e2741]:
+                  - img [ref=e2742]
+                  - generic [ref=e2745]: 온라인
+                - generic [ref=e2747]: "#startup"
+                - generic [ref=e2748]:
+                  - generic [ref=e2749]: meetup
+                  - img [ref=e2750]
+            - generic [ref=e2754] [cursor=pointer]:
+              - generic [ref=e2756]: "🔐 OWASP Seoul Chapter 1월 세미나: AI 보안의 현재와 미래 — 사례로 보는 위협과 방어"
+              - generic [ref=e2757]:
+                - generic [ref=e2758]:
+                  - img [ref=e2759]
+                  - generic [ref=e2762]: 온라인
+                - generic [ref=e2764]: "#tech"
+                - generic [ref=e2765]:
+                  - generic [ref=e2766]: meetup
+                  - img [ref=e2767]
+            - generic [ref=e2771] [cursor=pointer]:
+              - generic [ref=e2773]: "🔐 OWASP Seoul Chapter 1월 세미나: AI 보안의 현재와 미래 — 사례로 보는 위협과 방어"
+              - generic [ref=e2774]:
+                - generic [ref=e2775]:
+                  - img [ref=e2776]
+                  - generic [ref=e2779]: 온라인
+                - generic [ref=e2781]: "#AI"
+                - generic [ref=e2782]:
+                  - generic [ref=e2783]: meetup
+                  - img [ref=e2784]
+            - generic [ref=e2788] [cursor=pointer]:
+              - generic [ref=e2790]: AWSKRUG - AWS 테크에반젤리스트와 함께 레벨업! (온라인) - Amazon Bedrock과 RAG 이론 및 실습
+              - generic [ref=e2791]:
+                - generic [ref=e2792]:
+                  - img [ref=e2793]
+                  - generic [ref=e2796]: 온라인
+                - generic [ref=e2798]: "#tech"
+                - generic [ref=e2799]:
+                  - generic [ref=e2800]: meetup
+                  - img [ref=e2801]
+        - generic [ref=e2805]:
+          - heading "2026년 1월 29일 목 7" [level=2] [ref=e2806]:
+            - img [ref=e2807]
+            - text: 2026년 1월 29일 목
+            - generic [ref=e2809]: "7"
+          - generic [ref=e2810]:
+            - generic [ref=e2811] [cursor=pointer]:
+              - generic [ref=e2813]: "Leading the Agentic Transformation: A Blueprint for the AI-Native Enterprise"
+              - generic [ref=e2814]:
+                - generic [ref=e2815]:
+                  - img [ref=e2816]
+                  - generic [ref=e2819]: 온라인
+                - generic [ref=e2821]: "#AI"
+                - generic [ref=e2822]:
+                  - generic [ref=e2823]: meetup
+                  - img [ref=e2824]
+            - generic [ref=e2828] [cursor=pointer]:
+              - generic [ref=e2830]: "Dev Korea #6"
+              - generic [ref=e2831]:
+                - generic [ref=e2832]:
+                  - img [ref=e2833]
+                  - generic [ref=e2836]: 온라인
+                - generic [ref=e2838]: "#tech"
+                - generic [ref=e2839]:
+                  - generic [ref=e2840]: meetup
+                  - img [ref=e2841]
+            - generic [ref=e2845] [cursor=pointer]:
+              - generic [ref=e2847]: ClickHouse + Kakao Seoul 조인트 밋업!
+              - generic [ref=e2848]:
+                - generic [ref=e2849]:
+                  - img [ref=e2850]
+                  - generic [ref=e2853]: 온라인
+                - generic [ref=e2855]: "#tech"
+                - generic [ref=e2856]:
+                  - generic [ref=e2857]: meetup
+                  - img [ref=e2858]
+            - generic [ref=e2862] [cursor=pointer]:
+              - generic [ref=e2864]: ClickHouse x Kakao x Korea Data Engineering Group
+              - generic [ref=e2865]:
+                - generic [ref=e2866]:
+                  - img [ref=e2867]
+                  - generic [ref=e2870]: 온라인
+                - generic [ref=e2872]: "#tech"
+                - generic [ref=e2873]:
+                  - generic [ref=e2874]: meetup
+                  - img [ref=e2875]
+            - generic [ref=e2879] [cursor=pointer]:
+              - generic [ref=e2881]: "Dev Korea #6"
+              - generic [ref=e2882]:
+                - generic [ref=e2883]:
+                  - img [ref=e2884]
+                  - generic [ref=e2887]: 온라인
+                - generic [ref=e2889]: "#startup"
+                - generic [ref=e2890]:
+                  - generic [ref=e2891]: meetup
+                  - img [ref=e2892]
+            - generic [ref=e2896] [cursor=pointer]:
+              - generic [ref=e2898]: ClickHouse + Kakao Seoul 조인트 밋업!
+              - generic [ref=e2899]:
+                - generic [ref=e2900]:
+                  - img [ref=e2901]
+                  - generic [ref=e2904]: 온라인
+                - generic [ref=e2906]: "#AI"
+                - generic [ref=e2907]:
+                  - generic [ref=e2908]: meetup
+                  - img [ref=e2909]
+            - generic [ref=e2913] [cursor=pointer]:
+              - generic [ref=e2915]: "Dev Korea #6"
+              - generic [ref=e2916]:
+                - generic [ref=e2917]:
+                  - img [ref=e2918]
+                  - generic [ref=e2921]: 온라인
+                - generic [ref=e2923]: "#AI"
+                - generic [ref=e2924]:
+                  - generic [ref=e2925]: meetup
+                  - img [ref=e2926]
+        - generic [ref=e2930]:
+          - heading "2026년 2월 3일 화 1" [level=2] [ref=e2931]:
+            - img [ref=e2932]
+            - text: 2026년 2월 3일 화
+            - generic [ref=e2934]: "1"
+          - generic [ref=e2936] [cursor=pointer]:
+            - generic [ref=e2938]: Why AI Connectivity Matters
+            - generic [ref=e2939]:
+              - generic [ref=e2940]:
+                - img [ref=e2941]
+                - generic [ref=e2944]: 온라인
+              - generic [ref=e2946]: "#AI"
+              - generic [ref=e2947]:
+                - generic [ref=e2948]: meetup
+                - img [ref=e2949]
+        - generic [ref=e2953]:
+          - heading "2026년 2월 5일 목 1" [level=2] [ref=e2954]:
+            - img [ref=e2955]
+            - text: 2026년 2월 5일 목
+            - generic [ref=e2957]: "1"
+          - generic [ref=e2959] [cursor=pointer]:
+            - generic [ref=e2961]: Seoul Rust Meetup
+            - generic [ref=e2962]:
+              - generic [ref=e2963]:
+                - img [ref=e2964]
+                - generic [ref=e2967]: 온라인
+              - generic [ref=e2969]: "#tech"
+              - generic [ref=e2970]:
+                - generic [ref=e2971]: meetup
+                - img [ref=e2972]
+        - generic [ref=e2976]:
+          - heading "2026년 2월 26일 목 1" [level=2] [ref=e2977]:
+            - img [ref=e2978]
+            - text: 2026년 2월 26일 목
+            - generic [ref=e2980]: "1"
+          - generic [ref=e2982] [cursor=pointer]:
+            - generic [ref=e2984]: Korea Apache Airflow 5th Meetup @Seoul, Hanbit
+            - generic [ref=e2985]:
+              - generic [ref=e2986]:
+                - img [ref=e2987]
+                - generic [ref=e2990]: 온라인
+              - generic [ref=e2992]: "#tech"
+              - generic [ref=e2993]:
+                - generic [ref=e2994]: meetup
+                - img [ref=e2995]
+  - button "Open Next.js Dev Tools" [ref=e76] [cursor=pointer]:
+    - img [ref=e77]
+  - alert [ref=e70]
+```

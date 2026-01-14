@@ -1,5 +1,6 @@
 import { db } from './config'
-import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore'
+import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
+import type { TrendCollection, TrendItem } from '@/types'
 
 // ===== 설정 =====
 export async function saveUserSettings(uid: string, settings: {
@@ -68,4 +69,42 @@ export async function getAnalysisHistory(uid: string, roomId: string) {
     .map(d => d.data())
     .filter(d => d.roomId === roomId)
     .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime())
+}
+
+// ===== 트렌드 컬렉션 =====
+export async function saveTrendCollection(uid: string, trendCollection: TrendCollection) {
+  const ref = doc(db, 'users', uid, 'trends', trendCollection.id)
+  await setDoc(ref, { ...trendCollection, updatedAt: new Date().toISOString() })
+  return trendCollection.id
+}
+
+export async function getTrendCollection(uid: string, id: string) {
+  const ref = doc(db, 'users', uid, 'trends', id)
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() as TrendCollection : null
+}
+
+export async function getTrendCollections(uid: string, limitCount: number = 30) {
+  const ref = collection(db, 'users', uid, 'trends')
+  const q = query(ref, orderBy('date', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => d.data() as TrendCollection)
+}
+
+export async function addTrendItem(uid: string, date: string, item: TrendItem) {
+  const id = date
+  const existing = await getTrendCollection(uid, id)
+
+  if (existing) {
+    existing.items.push(item)
+    await saveTrendCollection(uid, existing)
+  } else {
+    const newCollection: TrendCollection = {
+      id,
+      date,
+      items: [item],
+    }
+    await saveTrendCollection(uid, newCollection)
+  }
+  return id
 }
