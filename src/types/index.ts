@@ -152,6 +152,25 @@ export interface TrendCollection {
   analyzedAt?: string;
 }
 
+// ===== 뉴스/트렌드 크롤링 =====
+
+// 뉴스 트렌드 플랫폼
+export type NewsTrendPlatform = 'geeknews' | 'hackernews' | 'producthunt' | 'disquiet';
+
+// 뉴스/트렌드 아이템
+export interface NewsTrendItem {
+  id: string;
+  platform: NewsTrendPlatform;
+  title: string;
+  url: string;
+  description?: string;
+  score?: number;       // HN upvotes, PH upvotes
+  comments?: number;
+  author?: string;
+  tags: string[];
+  crawledAt: string;
+}
+
 // ===== 이벤트 모니터링 =====
 
 // 이벤트 소스 플랫폼

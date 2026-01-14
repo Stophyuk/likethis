@@ -1,6 +1,6 @@
 import { db } from './config'
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
-import type { TrendCollection, TrendItem, EventItem } from '@/types'
+import type { TrendCollection, TrendItem, EventItem, NewsTrendItem } from '@/types'
 
 // ===== 설정 =====
 export async function saveUserSettings(uid: string, settings: {
@@ -332,4 +332,63 @@ export async function deleteInsightHistory(uid: string, roomId: string): Promise
     const ref = doc(db, 'users', uid, 'insightHistory', h.id)
     await setDoc(ref, { deleted: true })
   }
+}
+
+// ===== 뉴스/트렌드 =====
+export interface NewsTrendData {
+  items: NewsTrendItem[]
+  crawledAt: string
+  totalCount: number
+}
+
+// 뉴스 트렌드 저장
+export async function saveNewsTrends(uid: string, items: NewsTrendItem[]): Promise<NewsTrendData> {
+  const existing = await getNewsTrends(uid)
+
+  // ID 기준 중복 제거 (새 아이템이 우선)
+  const itemMap = new Map<string, NewsTrendItem>()
+  for (const item of existing.items) {
+    itemMap.set(item.id, item)
+  }
+  for (const item of items) {
+    itemMap.set(item.id, item)
+  }
+
+  // 최근 500개만 유지 (점수 순 정렬 후)
+  const mergedItems = Array.from(itemMap.values())
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .slice(0, 500)
+
+  const trendData: NewsTrendData = {
+    items: mergedItems,
+    crawledAt: new Date().toISOString(),
+    totalCount: mergedItems.length,
+  }
+
+  const ref = doc(db, 'users', uid, 'data', 'newsTrends')
+  await setDoc(ref, trendData)
+
+  return trendData
+}
+
+// 뉴스 트렌드 가져오기
+export async function getNewsTrends(uid: string): Promise<NewsTrendData> {
+  const ref = doc(db, 'users', uid, 'data', 'newsTrends')
+  const snap = await getDoc(ref)
+
+  if (snap.exists()) {
+    return snap.data() as NewsTrendData
+  }
+
+  return {
+    items: [],
+    crawledAt: '',
+    totalCount: 0,
+  }
+}
+
+// 플랫폼별 트렌드 가져오기
+export async function getNewsTrendsByPlatform(uid: string, platform: string): Promise<NewsTrendItem[]> {
+  const trends = await getNewsTrends(uid)
+  return trends.items.filter(item => item.platform === platform)
 }
