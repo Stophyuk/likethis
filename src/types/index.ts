@@ -126,3 +126,66 @@ export interface PlatformGuide {
   growthStrategy: string[];
   setupGuide?: SetupItem[];
 }
+
+// ===== 트렌드 수집 =====
+
+// 트렌드 소스 타입
+export type TrendSource = 'kakao' | 'community' | 'manual';
+
+// 개별 트렌드 아이템
+export interface TrendItem {
+  id: string;
+  source: TrendSource;
+  platform?: Platform;
+  content: string;
+  keywords: string[];
+  collectedAt: string;
+  metadata?: Record<string, unknown>;
+}
+
+// 트렌드 컬렉션 (일별)
+export interface TrendCollection {
+  id: string;
+  date: string;
+  items: TrendItem[];
+  summary?: string;
+  analyzedAt?: string;
+}
+
+// ===== 이벤트 모니터링 =====
+
+// 이벤트 소스 플랫폼
+export type EventSourcePlatform = 'onoffmix' | 'festa' | 'meetup' | 'custom';
+
+// 이벤트 소스 (크롤링할 URL)
+export interface EventSource {
+  id: string;
+  platform: EventSourcePlatform;
+  url: string;
+  name: string;
+  keywords: string[];
+  isActive: boolean;
+  lastCrawledAt?: string;
+  createdAt: string;
+}
+
+// 개별 이벤트
+export interface EventItem {
+  id: string;
+  sourceId: string;
+  platform: EventSourcePlatform;
+  title: string;
+  description?: string;
+  eventDate: string;
+  eventEndDate?: string;
+  location: string;
+  isOnline: boolean;
+  registrationUrl: string;
+  imageUrl?: string;
+  organizer?: string;
+  cost?: string; // 무료, 10,000원 등
+  capacity?: string; // 정원 70명 등
+  tags: string[];
+  status: 'upcoming' | 'ongoing' | 'ended';
+  crawledAt: string;
+}
