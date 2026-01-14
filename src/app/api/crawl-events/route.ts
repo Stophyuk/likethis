@@ -233,9 +233,11 @@ async function crawlMeetup(source: EventSource): Promise<EventItem[]> {
   return events
 }
 
-// Festa 이벤트 파싱
+// Festa 이벤트 파싱 (현재 서비스 중단)
 async function crawlFesta(source: EventSource): Promise<EventItem[]> {
-  console.log('Festa is currently under construction')
+  // festa.io가 현재 "under construction" 상태
+  // 서비스 재개 시 크롤러 구현 필요
+  console.log('Festa is currently unavailable (under construction)')
   return []
 }
 
