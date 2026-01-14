@@ -11,31 +11,55 @@ interface ChatMessage {
   message: string
 }
 
-// 청크 요약 결과
-interface ChunkSummary {
-  period: string
-  mainTopics: string[]
-  keyInsights: string[]
-  activeUsers: string[]
-  importantMessages: string[]
+// 인사이트 타입
+interface Insight {
+  category: 'tech' | 'business' | 'resource' | 'tip'
+  title: string
+  content: string
+  tags: string[]
 }
 
-// 청크별 간단 요약 (빠른 처리)
-async function summarizeChunk(messages: ChatMessage[], chunkIndex: number, totalChunks: number): Promise<ChunkSummary> {
+// 청크별 인사이트 추출
+interface ChunkInsights {
+  insights: Insight[]
+  resources: string[]
+}
+
+// 청크별 인사이트 추출 (기술/비즈니스 중심)
+async function extractChunkInsights(messages: ChatMessage[], chunkIndex: number, totalChunks: number): Promise<ChunkInsights> {
   const chatContent = messages
-    .map(m => `[${m.date}] ${m.user}: ${m.message}`)
+    .map(m => m.message)  // 누가 말했는지 제외, 내용만
     .join('\n')
-    .substring(0, 15000) // 청크당 15000자
+    .substring(0, 15000)
 
-  const prompt = `다음은 총 ${totalChunks}개 청크 중 ${chunkIndex + 1}번째 대화입니다. (${messages.length}개 메시지)
+  const prompt = `당신은 기술 및 비즈니스 리서처입니다.
+다음은 총 ${totalChunks}개 청크 중 ${chunkIndex + 1}번째 대화입니다.
 
-핵심만 추출해서 JSON으로 응답:
+이 대화에서 참고하거나 배울 만한 인사이트만 추출하세요.
+
+추출 대상:
+1. 기술 트렌드: 바이브 코딩, AI 도구, 개발 방법론, 새로운 기술
+2. 유용한 팁: 코딩 팁, 생산성 향상법, 도구 사용법
+3. 비즈니스 인사이트: 시장 동향, 사업 기회, 업계 소식
+4. 추천 자료: 공유된 링크, 추천 책/강의/도구
+
+중요:
+- 무의미한 잡담은 무시하세요
+- 누가 말했는지, 언제 말했는지는 생략하세요
+- 핵심 내용만 간결하게 정리하세요
+- 인사이트가 없으면 빈 배열로 응답하세요
+
+JSON 형식:
 {
-  "period": "이 청크의 대화 기간 (예: 1월 10일 ~ 1월 12일)",
-  "mainTopics": ["이 구간의 주요 토픽 3-5개"],
-  "keyInsights": ["꼭 알아야 할 중요 정보/결정/공지 등 최대 5개"],
-  "activeUsers": ["이 구간에서 활발한 사용자 최대 5명"],
-  "importantMessages": ["핵심 메시지 원문 최대 3개 (중요한 공지, 결정사항 등)"]
+  "insights": [
+    {
+      "category": "tech | business | resource | tip",
+      "title": "핵심 제목 (10자 이내)",
+      "content": "상세 내용 (1-2문장)",
+      "tags": ["관련", "태그들"]
+    }
+  ],
+  "resources": ["발견된 URL이나 자료명"]
 }
 
 대화 내용:
@@ -45,103 +69,84 @@ ${chatContent}`
     model: 'gpt-4-turbo-preview',
     messages: [{ role: 'user', content: prompt }],
     response_format: { type: 'json_object' },
-    max_tokens: 1000,
+    max_tokens: 2000,
   })
 
-  return JSON.parse(completion.choices[0].message.content || '{}')
+  return JSON.parse(completion.choices[0].message.content || '{"insights":[],"resources":[]}')
 }
 
-// 청크 요약들을 종합하여 최종 분석
-async function synthesizeSummaries(
-  chunkSummaries: ChunkSummary[],
-  recentMessages: ChatMessage[],
-  roomName: string,
+// 청크 인사이트들을 종합
+async function synthesizeInsights(
+  chunkInsights: ChunkInsights[],
   totalMessageCount: number
 ): Promise<Record<string, unknown>> {
-  // 청크 요약 정리
-  const allTopics = chunkSummaries.flatMap(c => c.mainTopics)
-  const allInsights = chunkSummaries.flatMap(c => c.keyInsights)
-  const allUsers = chunkSummaries.flatMap(c => c.activeUsers)
-  const allImportantMessages = chunkSummaries.flatMap(c => c.importantMessages)
+  // 모든 인사이트 합치기
+  const allInsights = chunkInsights.flatMap(c => c.insights)
+  const allResources = [...new Set(chunkInsights.flatMap(c => c.resources))]
 
-  // 최근 대화 텍스트 (상세 분석용)
-  const recentContent = recentMessages
-    .map(m => `[${m.date}] ${m.user}: ${m.message}`)
-    .join('\n')
-    .substring(0, 20000)
+  // 중복 인사이트 제거 (제목 기준)
+  const uniqueInsights: Insight[] = []
+  const seenTitles = new Set<string>()
 
-  const prompt = `"${roomName || '오픈채팅방'}" 대화를 분석합니다. 총 ${totalMessageCount}개 메시지.
+  for (const insight of allInsights) {
+    const normalizedTitle = insight.title.toLowerCase().trim()
+    if (!seenTitles.has(normalizedTitle)) {
+      seenTitles.add(normalizedTitle)
+      uniqueInsights.push(insight)
+    }
+  }
 
-## 전체 대화에서 추출된 정보
+  // 인사이트들을 GPT로 정리/병합
+  if (uniqueInsights.length > 0) {
+    const prompt = `다음 인사이트들을 정리하고 중복을 병합해주세요.
 
-### 전체 기간 토픽들:
-${[...new Set(allTopics)].join(', ')}
+인사이트 목록:
+${uniqueInsights.map((i, idx) => `${idx + 1}. [${i.category}] ${i.title}: ${i.content}`).join('\n')}
 
-### 전체 기간 핵심 인사이트들:
-${allInsights.map((i, idx) => `${idx + 1}. ${i}`).join('\n')}
-
-### 활발한 참여자들:
-${[...new Set(allUsers)].join(', ')}
-
-### 중요 메시지들:
-${allImportantMessages.map((m, idx) => `${idx + 1}. ${m}`).join('\n')}
-
-## 최근 대화 (상세 분석 대상):
-${recentContent}
-
----
-
-위 정보를 바탕으로 종합 분석 결과를 JSON으로:
+JSON 형식으로 응답:
 {
-  "summary": {
-    "period": "전체 대화 기간",
-    "messageCount": ${totalMessageCount},
-    "activeUsers": ["가장 활발한 참여자 최대 5명 - 위 정보에서 빈도순"],
-    "mainTopics": ["전체 기간 주요 토픽 5-7개 - 중요도순"]
-  },
-  "recentAnalysis": {
-    "period": "최근 대화 기간",
-    "details": "최근 대화 상세 분석 (5-7문장, 구체적인 내용과 맥락 포함)"
-  },
-  "previousSummary": {
-    "period": "이전 대화 기간",
-    "briefSummary": "이전 전체 대화 요약 (3-4문장, 핵심 흐름과 주요 결정사항)"
-  },
   "insights": [
     {
-      "title": "인사이트 제목 (구체적으로)",
-      "description": "상세 설명 (2-3문장)",
-      "importance": "high 또는 medium",
-      "source": "관련 원본 메시지나 맥락"
+      "category": "tech | business | resource | tip",
+      "title": "핵심 제목",
+      "content": "상세 내용 (1-2문장)",
+      "tags": ["태그들"]
     }
   ],
-  "recommendations": [
-    {
-      "type": "질문답변|의견제시|정보공유|팔로업",
-      "context": "이 추천이 나온 맥락",
-      "suggestion": "구체적인 제안",
-      "sampleMessage": "보낼 수 있는 예시 메시지"
-    }
-  ],
-  "keyDecisions": ["대화에서 나온 중요한 결정/합의 사항들"],
-  "pendingItems": ["아직 결론나지 않은 논의/질문들"],
-  "sharedResources": ["공유된 링크, 파일, 자료 등"]
+  "summary": "전체 대화의 핵심 요약 (2-3문장, 구체적인 내용 위주)"
 }
 
 중요:
-1. insights는 최소 5개, 중요한 것부터
-2. recommendations는 최근 대화 기준 3-5개
-3. 모든 내용은 구체적이고 actionable하게
-4. 빈 배열은 피하고, 해당 없으면 적절한 기본값`
+- 비슷한 내용은 하나로 병합
+- 카테고리별로 정리
+- 가장 유용한 인사이트 순으로 정렬
+- 무의미한 내용은 제외`
 
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4-turbo-preview',
-    messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
-    max_tokens: 4000,
-  })
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4-turbo-preview',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 3000,
+    })
 
-  return JSON.parse(completion.choices[0].message.content || '{}')
+    const result = JSON.parse(completion.choices[0].message.content || '{}')
+    return {
+      ...result,
+      resources: allResources,
+      _meta: {
+        totalMessages: totalMessageCount,
+        rawInsightCount: allInsights.length,
+        uniqueInsightCount: uniqueInsights.length,
+      }
+    }
+  }
+
+  return {
+    insights: [],
+    summary: '의미있는 인사이트를 찾지 못했습니다.',
+    resources: allResources,
+    noInsights: true,
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -176,62 +181,56 @@ export async function POST(req: NextRequest) {
     if (totalCount <= 500) {
       // 500개 이하: 단일 분석
       const chatText = chatMessages
-        .map(m => `[${m.date}] ${m.user}: ${m.message}`)
+        .map(m => m.message)  // 내용만 사용
         .join('\n')
 
-      const recentStart = Math.floor(totalCount * 0.7)
-      const previousContent = chatText.split('\n').slice(0, recentStart).join('\n')
-      const recentContent = chatText.split('\n').slice(recentStart).join('\n')
+      const prompt = `당신은 기술 및 비즈니스 리서처입니다.
+다음 대화에서 참고하거나 배울 만한 인사이트만 추출하세요.
 
-      const prompt = `다음은 "${roomName || '오픈채팅방'}" 대화입니다. 총 ${totalCount}개 메시지.
+추출 대상:
+1. 기술 트렌드: 바이브 코딩, AI 도구, 개발 방법론, 새로운 기술
+2. 유용한 팁: 코딩 팁, 생산성 향상법, 도구 사용법
+3. 비즈니스 인사이트: 시장 동향, 사업 기회, 업계 소식
+4. 추천 자료: 공유된 링크, 추천 책/강의/도구
 
-JSON으로 응답:
+중요:
+- 무의미한 잡담은 무시하세요
+- 누가 말했는지, 언제 말했는지는 생략하세요
+- 핵심 내용만 간결하게 정리하세요
+- 인사이트가 없으면 빈 배열로 응답하세요
+
+JSON 형식:
 {
-  "summary": {
-    "period": "대화 기간",
-    "messageCount": ${totalCount},
-    "activeUsers": ["활발한 참여자 최대 5명"],
-    "mainTopics": ["주요 토픽 3-5개"]
-  },
-  "recentAnalysis": {
-    "period": "최근 대화 기간",
-    "details": "최근 대화 상세 분석 (5-7문장)"
-  },
-  "previousSummary": {
-    "period": "이전 대화 기간",
-    "briefSummary": "이전 대화 요약 (2-3문장)"
-  },
   "insights": [
     {
-      "title": "인사이트 제목",
-      "description": "설명",
-      "importance": "high 또는 medium"
+      "category": "tech | business | resource | tip",
+      "title": "핵심 제목",
+      "content": "상세 내용 (1-2문장)",
+      "tags": ["관련", "태그들"]
     }
   ],
-  "recommendations": [
-    {
-      "type": "질문답변|의견제시|정보공유",
-      "context": "맥락",
-      "suggestion": "제안",
-      "sampleMessage": "예시 메시지"
-    }
-  ]
+  "summary": "전체 대화 핵심 요약 (2-3문장, 구체적인 내용 위주)",
+  "resources": ["발견된 URL이나 자료명"]
 }
 
-=== 이전 대화 ===
-${previousContent.substring(0, 8000)}
-
-=== 최근 대화 ===
-${recentContent.substring(0, 15000)}`
+대화 내용:
+${chatText.substring(0, 25000)}`
 
       const completion = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: [{ role: 'user', content: prompt }],
         response_format: { type: 'json_object' },
+        max_tokens: 3000,
       })
 
       const result = JSON.parse(completion.choices[0].message.content || '{}')
-      return NextResponse.json(result)
+      return NextResponse.json({
+        ...result,
+        _meta: {
+          totalMessages: totalCount,
+          analysisMethod: 'single',
+        }
+      })
 
     } else {
       // 500개 초과: 청크 분석 후 종합
@@ -242,9 +241,9 @@ ${recentContent.substring(0, 15000)}`
         chunks.push(chatMessages.slice(i, i + CHUNK_SIZE))
       }
 
-      console.log(`Processing ${chunks.length} chunks...`)
+      console.log(`Processing ${chunks.length} chunks for insights...`)
 
-      // 청크별 병렬 분석 (최근 3개 청크는 항상 분석, 나머지는 샘플링)
+      // 청크별 병렬 분석 (최대 5개 청크 샘플링)
       const chunksToAnalyze = chunks.length <= 5
         ? chunks
         : [
@@ -252,28 +251,19 @@ ${recentContent.substring(0, 15000)}`
             ...chunks.slice(-3),   // 마지막 3개
           ]
 
-      const chunkSummaries = await Promise.all(
+      const chunkInsights = await Promise.all(
         chunksToAnalyze.map((chunk, idx) =>
-          summarizeChunk(chunk, idx, chunksToAnalyze.length)
+          extractChunkInsights(chunk, idx, chunksToAnalyze.length)
         )
       )
 
-      // 최근 메시지 (마지막 30% 또는 최대 1000개)
-      const recentCount = Math.min(Math.floor(totalCount * 0.3), 1000)
-      const recentMessages = chatMessages.slice(-recentCount)
-
       // 종합 분석
-      const result = await synthesizeSummaries(
-        chunkSummaries,
-        recentMessages,
-        roomName,
-        totalCount
-      )
+      const result = await synthesizeInsights(chunkInsights, totalCount)
 
       return NextResponse.json({
         ...result,
         _meta: {
-          totalMessages: totalCount,
+          ...((result._meta as object) || {}),
           chunksAnalyzed: chunksToAnalyze.length,
           analysisMethod: 'chunked',
         }

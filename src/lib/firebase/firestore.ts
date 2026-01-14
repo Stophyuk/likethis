@@ -218,3 +218,118 @@ export async function deleteChatMessages(uid: string, roomId: string): Promise<v
     updatedAt: new Date().toISOString(),
   })
 }
+
+// ===== 인사이트 히스토리 =====
+export interface Insight {
+  category: 'tech' | 'business' | 'resource' | 'tip'
+  title: string
+  content: string
+  tags: string[]
+}
+
+export interface InsightHistory {
+  id: string
+  roomId: string
+  analyzedAt: string
+  messageCount: number
+  insights: Insight[]
+  summary: string
+  resources: string[]
+}
+
+// 인사이트 히스토리 저장 (중복 제거)
+export async function saveInsightHistory(
+  uid: string,
+  roomId: string,
+  insights: Insight[],
+  summary: string,
+  resources: string[],
+  messageCount: number
+): Promise<InsightHistory> {
+  // 기존 인사이트 가져오기
+  const existingHistory = await getInsightHistoryAll(uid, roomId)
+  const existingInsights = existingHistory.flatMap(h => h.insights)
+
+  // 중복 제거 (제목 유사도 기준)
+  const newInsights = insights.filter(newInsight => {
+    const normalizedNew = newInsight.title.toLowerCase().trim()
+    return !existingInsights.some(existing => {
+      const normalizedExisting = existing.title.toLowerCase().trim()
+      return normalizedNew === normalizedExisting ||
+        similarity(normalizedNew, normalizedExisting) > 0.8
+    })
+  })
+
+  const id = `${roomId}_${Date.now()}`
+  const historyEntry: InsightHistory = {
+    id,
+    roomId,
+    analyzedAt: new Date().toISOString(),
+    messageCount,
+    insights: newInsights,
+    summary,
+    resources,
+  }
+
+  const ref = doc(db, 'users', uid, 'insightHistory', id)
+  await setDoc(ref, historyEntry)
+
+  return historyEntry
+}
+
+// 문자열 유사도 계산 (간단한 Jaccard 유사도)
+function similarity(a: string, b: string): number {
+  const setA = new Set(a.split(/\s+/))
+  const setB = new Set(b.split(/\s+/))
+  const intersection = new Set([...setA].filter(x => setB.has(x)))
+  const union = new Set([...setA, ...setB])
+  return intersection.size / union.size
+}
+
+// 특정 방의 인사이트 히스토리 전체 가져오기
+export async function getInsightHistoryAll(uid: string, roomId: string): Promise<InsightHistory[]> {
+  const ref = collection(db, 'users', uid, 'insightHistory')
+  const snap = await getDocs(ref)
+  return snap.docs
+    .map(d => d.data() as InsightHistory)
+    .filter(d => d.roomId === roomId)
+    .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime())
+}
+
+// 특정 방의 모든 인사이트 합쳐서 가져오기 (중복 제거됨)
+export async function getAllInsights(uid: string, roomId: string): Promise<{
+  insights: Insight[]
+  totalAnalyses: number
+  lastAnalyzedAt: string | null
+}> {
+  const history = await getInsightHistoryAll(uid, roomId)
+
+  // 모든 인사이트 합치기 (최신 것 우선)
+  const allInsights: Insight[] = []
+  const seenTitles = new Set<string>()
+
+  for (const h of history) {
+    for (const insight of h.insights) {
+      const normalizedTitle = insight.title.toLowerCase().trim()
+      if (!seenTitles.has(normalizedTitle)) {
+        seenTitles.add(normalizedTitle)
+        allInsights.push(insight)
+      }
+    }
+  }
+
+  return {
+    insights: allInsights,
+    totalAnalyses: history.length,
+    lastAnalyzedAt: history[0]?.analyzedAt || null,
+  }
+}
+
+// 인사이트 히스토리 삭제
+export async function deleteInsightHistory(uid: string, roomId: string): Promise<void> {
+  const history = await getInsightHistoryAll(uid, roomId)
+  for (const h of history) {
+    const ref = doc(db, 'users', uid, 'insightHistory', h.id)
+    await setDoc(ref, { deleted: true })
+  }
+}

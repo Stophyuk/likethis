@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Upload, FileText, Loader2, Copy, Check, Lightbulb, MessageSquare, Database, Trash2, AlertCircle, Link2, Clock } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Loader2, Database, Trash2, Link2, Download, Lightbulb, Briefcase, BookOpen, Zap } from 'lucide-react'
 import { parseKakaoCsv, ChatMessage } from '@/lib/csv-parser'
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
@@ -18,50 +18,29 @@ interface Room {
   description: string
 }
 
+// 새로운 인사이트 중심 응답 구조
+interface InsightItem {
+  category: 'tech' | 'business' | 'resource' | 'tip'
+  title: string
+  content: string
+  tags: string[]
+}
+
 interface AnalysisResult {
-  summary: {
-    period: string
-    messageCount: number
-    activeUsers: string[]
-    mainTopics: string[]
-  }
-  recentAnalysis?: {
-    period: string
-    details: string
-  }
-  previousSummary?: {
-    period: string
-    briefSummary: string
-  }
-  insights: {
-    title: string
-    description: string
-    importance?: string
-    source?: string
-    relatedLinks?: string[]
-  }[]
-  recommendations: {
-    type: string
-    context: string
-    suggestion: string
-    sampleMessage?: string
-  }[]
-  keyDecisions?: string[]
-  pendingItems?: string[]
-  sharedResources?: string[]
+  insights: InsightItem[]
+  summary: string
+  resources: string[]
+  noInsights?: boolean
   _meta?: {
     totalMessages: number
-    chunksAnalyzed: number
+    chunksAnalyzed?: number
     analysisMethod: string
+    rawInsightCount?: number
+    uniqueInsightCount?: number
   }
 }
 
-interface AnalysisHistory {
-  id: string
-  analyzedAt: string
-  messageCount: number
-  result: AnalysisResult
-}
+type CategoryFilter = 'all' | 'tech' | 'business' | 'resource' | 'tip'
 
 export default function KakaoRoomPage() {
   const params = useParams()
@@ -74,12 +53,12 @@ export default function KakaoRoomPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const { user } = useAuth()
-  const [history, setHistory] = useState<AnalysisHistory[]>([])
-  const [selectedHistory, setSelectedHistory] = useState<AnalysisHistory | null>(null)
+  const [insightHistory, setInsightHistory] = useState<firestore.InsightHistory[]>([])
+  const [allInsights, setAllInsights] = useState<firestore.Insight[]>([])
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
 
   // 방 정보 로드
   useEffect(() => {
@@ -91,7 +70,7 @@ export default function KakaoRoomPage() {
     }
   }, [roomId])
 
-  // 축적된 메시지 및 히스토리 로드
+  // 축적된 메시지 및 인사이트 히스토리 로드
   useEffect(() => {
     if (user && roomId) {
       firestore.getChatMessages(user.uid, roomId).then(data => {
@@ -99,7 +78,8 @@ export default function KakaoRoomPage() {
           setAccumulatedData(data)
         }
       })
-      firestore.getAnalysisHistory(user.uid, roomId).then(h => setHistory(h as AnalysisHistory[]))
+      firestore.getInsightHistoryAll(user.uid, roomId).then(h => setInsightHistory(h))
+      firestore.getAllInsights(user.uid, roomId).then(data => setAllInsights(data.insights))
     }
   }, [user, roomId])
 
@@ -110,7 +90,6 @@ export default function KakaoRoomPage() {
       const parsed = parseKakaoCsv(content)
       setNewMessages(parsed)
       setResult(null)
-      setSelectedHistory(null)
     }
     reader.readAsText(file, 'UTF-8')
   }, [])
@@ -146,7 +125,6 @@ export default function KakaoRoomPage() {
 
   // 분석 실행
   const handleAnalyze = async () => {
-    // 분석할 메시지 결정: 새 메시지가 있으면 축적 후 분석, 없으면 축적된 메시지로 분석
     let messagesToAnalyze: ChatMessage[] = []
 
     if (newMessages.length > 0 && user) {
@@ -179,18 +157,23 @@ export default function KakaoRoomPage() {
           roomName: room?.room_name
         })
       })
-      const data = await res.json()
+      const data = await res.json() as AnalysisResult
       setResult(data)
 
-      // 분석 후 히스토리 저장
-      const newHistory = {
-        analyzedAt: new Date().toISOString(),
-        messageCount: messagesToAnalyze.length,
-        result: data
-      }
-      if (user) {
-        await firestore.saveAnalysisHistory(user.uid, roomId, newHistory)
-        setHistory(prev => [newHistory as AnalysisHistory, ...prev])
+      // 인사이트 히스토리 저장 (중복 제거됨)
+      if (user && data.insights && data.insights.length > 0) {
+        const savedHistory = await firestore.saveInsightHistory(
+          user.uid,
+          roomId,
+          data.insights as firestore.Insight[],
+          data.summary || '',
+          data.resources || [],
+          messagesToAnalyze.length
+        )
+        setInsightHistory(prev => [savedHistory, ...prev])
+        // 전체 인사이트 새로고침
+        const updated = await firestore.getAllInsights(user.uid, roomId)
+        setAllInsights(updated.insights)
       }
     } catch (error) {
       console.error('Analysis failed:', error)
@@ -199,22 +182,83 @@ export default function KakaoRoomPage() {
     }
   }
 
-  // 축적된 메시지 삭제
+  // 축적된 메시지 및 인사이트 삭제
   const handleClearMessages = async () => {
     if (!user) return
     try {
       await firestore.deleteChatMessages(user.uid, roomId)
+      await firestore.deleteInsightHistory(user.uid, roomId)
       setAccumulatedData(null)
+      setInsightHistory([])
+      setAllInsights([])
+      setResult(null)
       setShowClearConfirm(false)
     } catch (error) {
       console.error('Failed to clear messages:', error)
     }
   }
 
-  const copyToClipboard = (text: string, index: number) => {
-    navigator.clipboard.writeText(text)
-    setCopiedIndex(index)
-    setTimeout(() => setCopiedIndex(null), 2000)
+  // 인사이트 내보내기
+  const handleExport = () => {
+    const insights = categoryFilter === 'all'
+      ? allInsights
+      : allInsights.filter(i => i.category === categoryFilter)
+
+    const markdown = `# ${room?.room_name} 인사이트 모음
+
+생성일: ${new Date().toLocaleDateString()}
+총 인사이트: ${insights.length}개
+
+${insights.map(i => `## ${getCategoryEmoji(i.category)} ${i.title}
+
+${i.content}
+
+태그: ${i.tags.join(', ')}
+
+---`).join('\n\n')}
+`
+    const blob = new Blob([markdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${room?.room_name || 'insights'}_${new Date().toISOString().split('T')[0]}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // 카테고리 아이콘
+  const getCategoryEmoji = (category: string) => {
+    switch (category) {
+      case 'tech': return '💡'
+      case 'business': return '💼'
+      case 'resource': return '📚'
+      case 'tip': return '⚡'
+      default: return '💡'
+    }
+  }
+
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case 'tech': return '기술'
+      case 'business': return '비즈니스'
+      case 'resource': return '자료'
+      case 'tip': return '팁'
+      default: return category
+    }
+  }
+
+  // 필터링된 인사이트
+  const filteredInsights = categoryFilter === 'all'
+    ? allInsights
+    : allInsights.filter(i => i.category === categoryFilter)
+
+  // 카테고리별 개수
+  const categoryCounts = {
+    all: allInsights.length,
+    tech: allInsights.filter(i => i.category === 'tech').length,
+    business: allInsights.filter(i => i.category === 'business').length,
+    resource: allInsights.filter(i => i.category === 'resource').length,
+    tip: allInsights.filter(i => i.category === 'tip').length,
   }
 
   if (!room) {
@@ -235,7 +279,7 @@ export default function KakaoRoomPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{room.room_name}</h1>
-          <p className="text-gray-600">CSV 파일을 업로드하여 대화를 축적하고 분석하세요</p>
+          <p className="text-gray-600">CSV 파일을 업로드하여 인사이트를 추출하세요</p>
         </div>
       </div>
 
@@ -265,35 +309,12 @@ export default function KakaoRoomPage() {
                   </Button>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-red-600">정말 삭제?</span>
+                    <span className="text-sm text-red-600">전체 삭제?</span>
                     <Button variant="destructive" size="sm" onClick={handleClearMessages}>삭제</Button>
                     <Button variant="ghost" size="sm" onClick={() => setShowClearConfirm(false)}>취소</Button>
                   </div>
                 )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 분석 히스토리 */}
-      {history.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">분석 히스토리</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {history.map((h, i) => (
-                <button
-                  key={h.id || i}
-                  onClick={() => { setSelectedHistory(h); setResult(h.result) }}
-                  className={`flex-shrink-0 p-3 rounded-lg border text-left ${selectedHistory?.id === h.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
-                >
-                  <p className="font-medium text-sm">{new Date(h.analyzedAt).toLocaleDateString()}</p>
-                  <p className="text-xs text-gray-500">{h.messageCount.toLocaleString()}개 메시지</p>
-                </button>
-              ))}
             </div>
           </CardContent>
         </Card>
@@ -355,10 +376,10 @@ export default function KakaoRoomPage() {
                 {analyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    {totalMessages > 500 ? '청크 분석 중...' : '분석 중...'}
+                    인사이트 추출 중...
                   </>
                 ) : (
-                  '전체 분석하기'
+                  '인사이트 추출하기'
                 )}
               </Button>
             </div>
@@ -366,236 +387,150 @@ export default function KakaoRoomPage() {
         </CardContent>
       </Card>
 
-      {/* 분석 결과 */}
-      {result && (
-        <div className="space-y-4">
-          {/* 분석 메타 정보 */}
-          {result._meta && (
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <AlertCircle className="w-4 h-4" />
-              <span>
-                {result._meta.totalMessages.toLocaleString()}개 메시지 / {result._meta.chunksAnalyzed}개 청크 분석
-              </span>
+      {/* 최신 분석 요약 */}
+      {result && result.summary && (
+        <Card className="bg-gray-50">
+          <CardContent className="py-4">
+            <p className="text-sm text-gray-700">{result.summary}</p>
+            {result._meta && (
+              <p className="text-xs text-gray-500 mt-2">
+                {result._meta.totalMessages.toLocaleString()}개 메시지에서 {result.insights?.length || 0}개 인사이트 추출
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 인사이트 모음 */}
+      {allInsights.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">인사이트 모음</CardTitle>
+              <Button variant="outline" size="sm" onClick={handleExport}>
+                <Download className="w-4 h-4 mr-1" />
+                내보내기
+              </Button>
             </div>
-          )}
+          </CardHeader>
+          <CardContent>
+            {/* 카테고리 필터 */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(['all', 'tech', 'business', 'resource', 'tip'] as const).map(cat => (
+                <Button
+                  key={cat}
+                  variant={categoryFilter === cat ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCategoryFilter(cat)}
+                  className="gap-1"
+                >
+                  {cat === 'all' && '전체'}
+                  {cat === 'tech' && <><Lightbulb className="w-3 h-3" /> 기술</>}
+                  {cat === 'business' && <><Briefcase className="w-3 h-3" /> 비즈니스</>}
+                  {cat === 'resource' && <><BookOpen className="w-3 h-3" /> 자료</>}
+                  {cat === 'tip' && <><Zap className="w-3 h-3" /> 팁</>}
+                  <span className="text-xs opacity-70">({categoryCounts[cat]})</span>
+                </Button>
+              ))}
+            </div>
 
-          {/* 요약 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                대화 요약
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p><span className="text-gray-500">기간:</span> {result.summary.period}</p>
-              <p><span className="text-gray-500">메시지:</span> {result.summary.messageCount?.toLocaleString()}개</p>
-              <p><span className="text-gray-500">활발한 참여자:</span> {result.summary.activeUsers?.join(', ')}</p>
-              <div>
-                <span className="text-gray-500">주요 토픽:</span>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {result.summary.mainTopics?.map((topic, i) => (
-                    <Badge key={i} variant="secondary">{topic}</Badge>
-                  ))}
+            {/* 인사이트 목록 */}
+            <div className="space-y-3">
+              {filteredInsights.map((insight, idx) => (
+                <div key={idx} className="p-4 bg-white border rounded-lg hover:shadow-sm transition-shadow">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">{getCategoryEmoji(insight.category)}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 rounded">
+                          {getCategoryLabel(insight.category)}
+                        </span>
+                        <h3 className="font-medium text-gray-900">{insight.title}</h3>
+                      </div>
+                      <p className="text-sm text-gray-600">{insight.content}</p>
+                      {insight.tags && insight.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {insight.tags.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              ))}
 
-          {/* 최근 대화 상세 */}
-          {result.recentAnalysis && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-green-500" />
-                  최근 대화 상세
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-500 mb-2">{result.recentAnalysis.period}</p>
-                <p className="text-gray-700">{result.recentAnalysis.details}</p>
-              </CardContent>
-            </Card>
-          )}
+              {filteredInsights.length === 0 && (
+                <p className="text-center text-gray-500 py-8">
+                  해당 카테고리에 인사이트가 없습니다
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* 이전 대화 요약 */}
-          {result.previousSummary && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-gray-400" />
-                  이전 대화 요약
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-500 mb-2">{result.previousSummary.period}</p>
-                <p className="text-gray-700">{result.previousSummary.briefSummary}</p>
-              </CardContent>
-            </Card>
-          )}
+      {/* 공유된 자료 */}
+      {result?.resources && result.resources.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Link2 className="w-5 h-5 text-blue-500" />
+              공유된 자료
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2">
+              {result.resources.map((resource, idx) => (
+                <li key={idx} className="text-sm">
+                  {resource.startsWith('http') ? (
+                    <a href={resource} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                      {resource}
+                    </a>
+                  ) : (
+                    <span>{resource}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* 주요 결정사항 */}
-          {result.keyDecisions && result.keyDecisions.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Check className="w-5 h-5 text-green-500" />
-                  주요 결정/합의 사항
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {result.keyDecisions.map((decision, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-green-500 mt-1">✓</span>
-                      <span>{decision}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 미결 사항 */}
-          {result.pendingItems && result.pendingItems.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-orange-500" />
-                  미결 논의/질문
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {result.pendingItems.map((item, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="text-orange-500 mt-1">?</span>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 공유된 자료 */}
-          {result.sharedResources && result.sharedResources.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Link2 className="w-5 h-5 text-blue-500" />
-                  공유된 링크/자료
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {result.sharedResources.map((resource, idx) => (
-                    <li key={idx} className="text-sm">
-                      {resource.startsWith('http') ? (
-                        <a href={resource} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
-                          {resource}
-                        </a>
-                      ) : (
-                        <span>{resource}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* 인사이트 */}
-          {result.insights?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5 text-yellow-500" />
-                  인사이트
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {result.insights.map((insight, idx) => (
-                  <div key={idx} className={`border-l-2 pl-4 ${insight.importance === 'high' ? 'border-red-400' : 'border-yellow-400'}`}>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{insight.title}</p>
-                      {insight.importance === 'high' && (
-                        <Badge variant="destructive" className="text-xs">중요</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
-                    {insight.source && (
-                      <p className="text-xs text-gray-400 mt-1">📌 {insight.source}</p>
-                    )}
-                    {insight.relatedLinks && insight.relatedLinks.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {insight.relatedLinks.map((link, i) => (
-                          <a
-                            key={i}
-                            href={link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline"
-                          >
-                            {link}
-                          </a>
-                        ))}
-                      </div>
-                    )}
+      {/* 분석 히스토리 */}
+      {insightHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">분석 히스토리</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {insightHistory.map((h, i) => (
+                <div key={h.id || i} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-sm">{new Date(h.analyzedAt).toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-500">
+                      {h.messageCount.toLocaleString()}개 메시지 → {h.insights.length}개 신규 인사이트
+                    </p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* 참여 추천 */}
-          {result.recommendations?.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-blue-500" />
-                  참여 추천
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {result.recommendations.map((rec, idx) => (
-                  <div key={idx} className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                        {rec.type}
-                      </span>
-                      <span className="text-sm text-gray-600">{rec.context}</span>
-                    </div>
-                    <p className="text-sm mb-2">{rec.suggestion}</p>
-                    {rec.sampleMessage && (
-                      <div className="bg-white border rounded p-3 mt-2">
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{rec.sampleMessage}</p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => copyToClipboard(rec.sampleMessage!, idx)}
-                        >
-                          {copiedIndex === idx ? (
-                            <>
-                              <Check className="w-4 h-4 mr-1" />
-                              복사됨
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4 mr-1" />
-                              복사하기
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      {/* 인사이트 없음 안내 */}
+      {allInsights.length === 0 && !analyzing && accumulatedData && (
+        <Card className="bg-gray-50">
+          <CardContent className="py-8 text-center">
+            <Lightbulb className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+            <p className="text-gray-500">아직 추출된 인사이트가 없습니다</p>
+            <p className="text-sm text-gray-400 mt-1">위의 &quot;인사이트 추출하기&quot; 버튼을 클릭하세요</p>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
