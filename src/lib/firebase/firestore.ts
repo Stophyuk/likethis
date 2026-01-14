@@ -1,6 +1,6 @@
 import { db } from './config'
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
-import type { TrendCollection, TrendItem } from '@/types'
+import type { TrendCollection, TrendItem, EventItem } from '@/types'
 
 // ===== 설정 =====
 export async function saveUserSettings(uid: string, settings: {
@@ -107,4 +107,114 @@ export async function addTrendItem(uid: string, date: string, item: TrendItem) {
     await saveTrendCollection(uid, newCollection)
   }
   return id
+}
+
+// ===== 이벤트 =====
+export async function saveEvents(uid: string, events: EventItem[]) {
+  const ref = doc(db, 'users', uid, 'data', 'events')
+  await setDoc(ref, {
+    events,
+    updatedAt: new Date().toISOString(),
+    count: events.length
+  })
+}
+
+export async function getEvents(uid: string): Promise<EventItem[]> {
+  const ref = doc(db, 'users', uid, 'data', 'events')
+  const snap = await getDoc(ref)
+  return snap.exists() ? (snap.data()?.events || []) : []
+}
+
+// 새 이벤트와 기존 이벤트 병합 (ID 기준 중복 제거)
+export async function mergeAndSaveEvents(uid: string, newEvents: EventItem[]): Promise<EventItem[]> {
+  const existingEvents = await getEvents(uid)
+
+  // ID 기준으로 병합 (새 이벤트가 기존 이벤트 덮어씀)
+  const eventMap = new Map<string, EventItem>()
+  for (const event of existingEvents) {
+    eventMap.set(event.id, event)
+  }
+  for (const event of newEvents) {
+    eventMap.set(event.id, event)
+  }
+
+  const mergedEvents = Array.from(eventMap.values())
+    .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+
+  await saveEvents(uid, mergedEvents)
+  return mergedEvents
+}
+
+// ===== 카카오 채팅 메시지 축적 =====
+export interface ChatMessage {
+  date: string
+  user: string
+  message: string
+}
+
+export interface RoomChatData {
+  messages: ChatMessage[]
+  totalCount: number
+  firstDate?: string
+  lastDate?: string
+  updatedAt: string
+}
+
+// 채팅 메시지 저장 (병합)
+export async function saveChatMessages(uid: string, roomId: string, newMessages: ChatMessage[]): Promise<RoomChatData> {
+  const existing = await getChatMessages(uid, roomId)
+
+  // 중복 제거를 위한 키 생성 (날짜+사용자+메시지 해시)
+  const messageKey = (m: ChatMessage) => `${m.date}|${m.user}|${m.message.substring(0, 50)}`
+
+  const messageMap = new Map<string, ChatMessage>()
+  for (const msg of existing.messages) {
+    messageMap.set(messageKey(msg), msg)
+  }
+  for (const msg of newMessages) {
+    messageMap.set(messageKey(msg), msg)
+  }
+
+  // 날짜순 정렬
+  const mergedMessages = Array.from(messageMap.values())
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+
+  const chatData: RoomChatData = {
+    messages: mergedMessages,
+    totalCount: mergedMessages.length,
+    firstDate: mergedMessages[0]?.date,
+    lastDate: mergedMessages[mergedMessages.length - 1]?.date,
+    updatedAt: new Date().toISOString(),
+  }
+
+  const ref = doc(db, 'users', uid, 'kakaoChats', roomId)
+  await setDoc(ref, chatData)
+
+  return chatData
+}
+
+// 채팅 메시지 불러오기
+export async function getChatMessages(uid: string, roomId: string): Promise<RoomChatData> {
+  const ref = doc(db, 'users', uid, 'kakaoChats', roomId)
+  const snap = await getDoc(ref)
+
+  if (snap.exists()) {
+    return snap.data() as RoomChatData
+  }
+
+  return {
+    messages: [],
+    totalCount: 0,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+// 채팅 메시지 삭제
+export async function deleteChatMessages(uid: string, roomId: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'kakaoChats', roomId)
+  await setDoc(ref, {
+    messages: [],
+    totalCount: 0,
+    updatedAt: new Date().toISOString(),
+  })
 }

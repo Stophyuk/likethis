@@ -55,13 +55,8 @@ async function fetchOnOffMixDetail(eventId: string): Promise<{
       const match = str.match(/(\d{4})\.(\d{1,2})\.(\d{1,2}).*?(\d{2}):(\d{2})/)
       if (match) {
         const [, year, month, day, hour, minute] = match
-        return new Date(
-          parseInt(year),
-          parseInt(month) - 1,
-          parseInt(day),
-          parseInt(hour),
-          parseInt(minute)
-        ).toISOString()
+        // KST(+09:00) 타임존으로 ISO 문자열 직접 생성 (타임존 변환 버그 방지)
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${hour}:${minute}:00+09:00`
       }
       return new Date().toISOString()
     }
@@ -290,15 +285,27 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 중복 제거 및 날짜순 정렬
+    // 중복 제거
     const uniqueEvents = Array.from(
       new Map(result.events.map(e => [e.id, e])).values()
-    ).sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
+    )
+
+    // 지난 이벤트 필터링 (오늘 이후 이벤트만)
+    const now = new Date()
+    now.setHours(0, 0, 0, 0) // 오늘 자정 기준
+    const futureEvents = uniqueEvents.filter(e => {
+      const eventDate = new Date(e.eventDate)
+      return eventDate >= now
+    })
+
+    // 날짜순 정렬
+    futureEvents.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
 
     return NextResponse.json({
-      events: uniqueEvents,
+      events: futureEvents,
       errors: result.errors,
-      totalCrawled: uniqueEvents.length,
+      totalCrawled: futureEvents.length,
+      filteredOut: uniqueEvents.length - futureEvents.length,
       sourcesProcessed: sources.filter(s => s.isActive).length,
     })
 

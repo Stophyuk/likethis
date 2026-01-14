@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ArrowLeft, Upload, FileText, Loader2, Copy, Check, Lightbulb, MessageSquare } from 'lucide-react'
-import { parseKakaoCsv, messagesToText, ChatMessage } from '@/lib/csv-parser'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Upload, FileText, Loader2, Copy, Check, Lightbulb, MessageSquare, Database, Trash2, AlertCircle, Link2, Clock } from 'lucide-react'
+import { parseKakaoCsv, ChatMessage } from '@/lib/csv-parser'
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
 
@@ -24,9 +25,19 @@ interface AnalysisResult {
     activeUsers: string[]
     mainTopics: string[]
   }
+  recentAnalysis?: {
+    period: string
+    details: string
+  }
+  previousSummary?: {
+    period: string
+    briefSummary: string
+  }
   insights: {
     title: string
     description: string
+    importance?: string
+    source?: string
     relatedLinks?: string[]
   }[]
   recommendations: {
@@ -35,6 +46,14 @@ interface AnalysisResult {
     suggestion: string
     sampleMessage?: string
   }[]
+  keyDecisions?: string[]
+  pendingItems?: string[]
+  sharedResources?: string[]
+  _meta?: {
+    totalMessages: number
+    chunksAnalyzed: number
+    analysisMethod: string
+  }
 }
 
 interface AnalysisHistory {
@@ -50,15 +69,19 @@ export default function KakaoRoomPage() {
   const roomId = params.roomId as string
 
   const [room, setRoom] = useState<Room | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [newMessages, setNewMessages] = useState<ChatMessage[]>([])
+  const [accumulatedData, setAccumulatedData] = useState<firestore.RoomChatData | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const { user } = useAuth()
   const [history, setHistory] = useState<AnalysisHistory[]>([])
   const [selectedHistory, setSelectedHistory] = useState<AnalysisHistory | null>(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
+  // 방 정보 로드
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
@@ -68,8 +91,14 @@ export default function KakaoRoomPage() {
     }
   }, [roomId])
 
+  // 축적된 메시지 및 히스토리 로드
   useEffect(() => {
     if (user && roomId) {
+      firestore.getChatMessages(user.uid, roomId).then(data => {
+        if (data.totalCount > 0) {
+          setAccumulatedData(data)
+        }
+      })
       firestore.getAnalysisHistory(user.uid, roomId).then(h => setHistory(h as AnalysisHistory[]))
     }
   }, [user, roomId])
@@ -79,8 +108,9 @@ export default function KakaoRoomPage() {
     reader.onload = (e) => {
       const content = e.target?.result as string
       const parsed = parseKakaoCsv(content)
-      setMessages(parsed)
+      setNewMessages(parsed)
       setResult(null)
+      setSelectedHistory(null)
     }
     reader.readAsText(file, 'UTF-8')
   }, [])
@@ -99,15 +129,55 @@ export default function KakaoRoomPage() {
     if (file) handleFileUpload(file)
   }, [handleFileUpload])
 
+  // 메시지 저장 (축적)
+  const handleSaveMessages = async () => {
+    if (!user || newMessages.length === 0) return
+    setSaving(true)
+    try {
+      const updated = await firestore.saveChatMessages(user.uid, roomId, newMessages)
+      setAccumulatedData(updated)
+      setNewMessages([]) // 업로드된 메시지 초기화
+    } catch (error) {
+      console.error('Failed to save messages:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  // 분석 실행
   const handleAnalyze = async () => {
-    if (messages.length === 0) return
+    // 분석할 메시지 결정: 새 메시지가 있으면 축적 후 분석, 없으면 축적된 메시지로 분석
+    let messagesToAnalyze: ChatMessage[] = []
+
+    if (newMessages.length > 0 && user) {
+      // 새 메시지를 먼저 축적
+      setSaving(true)
+      try {
+        const updated = await firestore.saveChatMessages(user.uid, roomId, newMessages)
+        setAccumulatedData(updated)
+        messagesToAnalyze = updated.messages
+        setNewMessages([])
+      } catch (error) {
+        console.error('Failed to save messages:', error)
+        return
+      } finally {
+        setSaving(false)
+      }
+    } else if (accumulatedData && accumulatedData.messages.length > 0) {
+      messagesToAnalyze = accumulatedData.messages
+    }
+
+    if (messagesToAnalyze.length === 0) return
+
     setAnalyzing(true)
     try {
-      const text = messagesToText(messages)
       const res = await fetch('/api/summarize-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatContent: text, roomName: room?.room_name })
+        body: JSON.stringify({
+          messages: messagesToAnalyze,
+          roomName: room?.room_name
+        })
       })
       const data = await res.json()
       setResult(data)
@@ -115,7 +185,7 @@ export default function KakaoRoomPage() {
       // 분석 후 히스토리 저장
       const newHistory = {
         analyzedAt: new Date().toISOString(),
-        messageCount: messages.length,
+        messageCount: messagesToAnalyze.length,
         result: data
       }
       if (user) {
@@ -126,6 +196,18 @@ export default function KakaoRoomPage() {
       console.error('Analysis failed:', error)
     } finally {
       setAnalyzing(false)
+    }
+  }
+
+  // 축적된 메시지 삭제
+  const handleClearMessages = async () => {
+    if (!user) return
+    try {
+      await firestore.deleteChatMessages(user.uid, roomId)
+      setAccumulatedData(null)
+      setShowClearConfirm(false)
+    } catch (error) {
+      console.error('Failed to clear messages:', error)
     }
   }
 
@@ -143,6 +225,8 @@ export default function KakaoRoomPage() {
     )
   }
 
+  const totalMessages = (accumulatedData?.totalCount || 0) + newMessages.length
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -151,9 +235,46 @@ export default function KakaoRoomPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">{room.room_name}</h1>
-          <p className="text-gray-600">CSV 파일을 업로드하여 대화를 분석하세요</p>
+          <p className="text-gray-600">CSV 파일을 업로드하여 대화를 축적하고 분석하세요</p>
         </div>
       </div>
+
+      {/* 축적된 데이터 상태 */}
+      {accumulatedData && accumulatedData.totalCount > 0 && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Database className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-900">
+                    축적된 메시지: {accumulatedData.totalCount.toLocaleString()}개
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    {accumulatedData.firstDate && accumulatedData.lastDate && (
+                      <>기간: {new Date(accumulatedData.firstDate).toLocaleDateString()} ~ {new Date(accumulatedData.lastDate).toLocaleDateString()}</>
+                    )}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!showClearConfirm ? (
+                  <Button variant="ghost" size="sm" onClick={() => setShowClearConfirm(true)} className="text-red-600 hover:text-red-700">
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    초기화
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-red-600">정말 삭제?</span>
+                    <Button variant="destructive" size="sm" onClick={handleClearMessages}>삭제</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setShowClearConfirm(false)}>취소</Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 분석 히스토리 */}
       {history.length > 0 && (
@@ -170,7 +291,7 @@ export default function KakaoRoomPage() {
                   className={`flex-shrink-0 p-3 rounded-lg border text-left ${selectedHistory?.id === h.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}
                 >
                   <p className="font-medium text-sm">{new Date(h.analyzedAt).toLocaleDateString()}</p>
-                  <p className="text-xs text-gray-500">{h.messageCount}개 메시지</p>
+                  <p className="text-xs text-gray-500">{h.messageCount.toLocaleString()}개 메시지</p>
                 </button>
               ))}
             </div>
@@ -199,24 +320,45 @@ export default function KakaoRoomPage() {
             <label htmlFor="file-upload" className="cursor-pointer">
               <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
               <p className="text-gray-600 mb-1">CSV 파일을 드래그하거나 클릭하여 업로드</p>
-              <p className="text-sm text-gray-400">카카오톡 대화 내보내기 파일 (.csv, .txt)</p>
+              <p className="text-sm text-gray-400">새 파일은 기존 메시지와 병합됩니다 (중복 제거)</p>
             </label>
           </div>
 
-          {messages.length > 0 && (
-            <div className="mt-4 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <FileText className="w-4 h-4" />
-                <span>{messages.length}개 메시지 로드됨 (시스템 메시지 제외)</span>
+          {/* 새로 업로드된 메시지 */}
+          {newMessages.length > 0 && (
+            <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-green-700">
+                  <FileText className="w-4 h-4" />
+                  <span>새로 업로드: {newMessages.length.toLocaleString()}개 메시지</span>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleSaveMessages} disabled={saving}>
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4 mr-1" />}
+                    저장만
+                  </Button>
+                </div>
               </div>
-              <Button onClick={handleAnalyze} disabled={analyzing}>
+            </div>
+          )}
+
+          {/* 분석 버튼 */}
+          {(totalMessages > 0) && (
+            <div className="mt-4 flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                분석 대상: <span className="font-medium">{totalMessages.toLocaleString()}개</span> 메시지
+                {totalMessages > 500 && (
+                  <Badge variant="secondary" className="ml-2">청크 분석</Badge>
+                )}
+              </div>
+              <Button onClick={handleAnalyze} disabled={analyzing || totalMessages === 0}>
                 {analyzing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    분석 중...
+                    {totalMessages > 500 ? '청크 분석 중...' : '분석 중...'}
                   </>
                 ) : (
-                  '분석하기'
+                  '전체 분석하기'
                 )}
               </Button>
             </div>
@@ -227,6 +369,16 @@ export default function KakaoRoomPage() {
       {/* 분석 결과 */}
       {result && (
         <div className="space-y-4">
+          {/* 분석 메타 정보 */}
+          {result._meta && (
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <AlertCircle className="w-4 h-4" />
+              <span>
+                {result._meta.totalMessages.toLocaleString()}개 메시지 / {result._meta.chunksAnalyzed}개 청크 분석
+              </span>
+            </div>
+          )}
+
           {/* 요약 */}
           <Card>
             <CardHeader>
@@ -235,13 +387,123 @@ export default function KakaoRoomPage() {
                 대화 요약
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-3">
               <p><span className="text-gray-500">기간:</span> {result.summary.period}</p>
-              <p><span className="text-gray-500">메시지:</span> {result.summary.messageCount}개</p>
+              <p><span className="text-gray-500">메시지:</span> {result.summary.messageCount?.toLocaleString()}개</p>
               <p><span className="text-gray-500">활발한 참여자:</span> {result.summary.activeUsers?.join(', ')}</p>
-              <p><span className="text-gray-500">주요 토픽:</span> {result.summary.mainTopics?.join(', ')}</p>
+              <div>
+                <span className="text-gray-500">주요 토픽:</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {result.summary.mainTopics?.map((topic, i) => (
+                    <Badge key={i} variant="secondary">{topic}</Badge>
+                  ))}
+                </div>
+              </div>
             </CardContent>
           </Card>
+
+          {/* 최근 대화 상세 */}
+          {result.recentAnalysis && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-green-500" />
+                  최근 대화 상세
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500 mb-2">{result.recentAnalysis.period}</p>
+                <p className="text-gray-700">{result.recentAnalysis.details}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 이전 대화 요약 */}
+          {result.previousSummary && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-gray-400" />
+                  이전 대화 요약
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-500 mb-2">{result.previousSummary.period}</p>
+                <p className="text-gray-700">{result.previousSummary.briefSummary}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 주요 결정사항 */}
+          {result.keyDecisions && result.keyDecisions.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Check className="w-5 h-5 text-green-500" />
+                  주요 결정/합의 사항
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {result.keyDecisions.map((decision, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-green-500 mt-1">✓</span>
+                      <span>{decision}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 미결 사항 */}
+          {result.pendingItems && result.pendingItems.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-orange-500" />
+                  미결 논의/질문
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {result.pendingItems.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="text-orange-500 mt-1">?</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 공유된 자료 */}
+          {result.sharedResources && result.sharedResources.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-blue-500" />
+                  공유된 링크/자료
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  {result.sharedResources.map((resource, idx) => (
+                    <li key={idx} className="text-sm">
+                      {resource.startsWith('http') ? (
+                        <a href={resource} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
+                          {resource}
+                        </a>
+                      ) : (
+                        <span>{resource}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* 인사이트 */}
           {result.insights?.length > 0 && (
@@ -254,9 +516,17 @@ export default function KakaoRoomPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {result.insights.map((insight, idx) => (
-                  <div key={idx} className="border-l-2 border-yellow-400 pl-4">
-                    <p className="font-medium">{insight.title}</p>
+                  <div key={idx} className={`border-l-2 pl-4 ${insight.importance === 'high' ? 'border-red-400' : 'border-yellow-400'}`}>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{insight.title}</p>
+                      {insight.importance === 'high' && (
+                        <Badge variant="destructive" className="text-xs">중요</Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600 mt-1">{insight.description}</p>
+                    {insight.source && (
+                      <p className="text-xs text-gray-400 mt-1">📌 {insight.source}</p>
+                    )}
                     {insight.relatedLinks && insight.relatedLinks.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {insight.relatedLinks.map((link, i) => (

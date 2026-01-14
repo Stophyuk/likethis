@@ -10,6 +10,7 @@ const LOCAL_KEYS = {
   interests: 'likethis_interests',
   profileUrls: 'likethis_profile_urls',
   kakaoRooms: 'likethis_kakao_rooms',
+  events: 'likethis_events',
 }
 
 export function useSync() {
@@ -37,6 +38,15 @@ export function useSync() {
       const kakaoRooms = localStorage.getItem(LOCAL_KEYS.kakaoRooms)
       if (kakaoRooms) {
         await firestore.saveKakaoRooms(user.uid, JSON.parse(kakaoRooms))
+      }
+
+      // 이벤트 동기화
+      const events = localStorage.getItem(LOCAL_KEYS.events)
+      if (events) {
+        const parsed = JSON.parse(events)
+        if (parsed.events) {
+          await firestore.saveEvents(user.uid, parsed.events)
+        }
       }
 
       // 활동 기록 동기화 (최근 30일)
@@ -83,6 +93,15 @@ export function useSync() {
         localStorage.setItem(LOCAL_KEYS.kakaoRooms, JSON.stringify(kakaoRooms))
       }
 
+      // 이벤트 가져오기
+      const events = await firestore.getEvents(user.uid)
+      if (events && events.length > 0) {
+        localStorage.setItem(LOCAL_KEYS.events, JSON.stringify({
+          events,
+          lastCrawled: new Date().toISOString()
+        }))
+      }
+
       console.log('Synced from cloud')
     } catch (error) {
       console.error('Sync from cloud failed:', error)
@@ -104,6 +123,38 @@ export function useSync() {
     }
   }, [user])
 
+  // 이벤트 즉시 동기화 (병합 저장)
+  const syncEventsNow = useCallback(async (newEvents?: unknown[]) => {
+    if (!user) return null
+
+    try {
+      if (newEvents && newEvents.length > 0) {
+        // 새 이벤트가 있으면 병합 저장
+        const merged = await firestore.mergeAndSaveEvents(user.uid, newEvents as import('@/types').EventItem[])
+        localStorage.setItem(LOCAL_KEYS.events, JSON.stringify({
+          events: merged,
+          lastCrawled: new Date().toISOString()
+        }))
+        console.log('Events merged and synced:', merged.length)
+        return merged
+      } else {
+        // 새 이벤트 없으면 localStorage에서 클라우드로
+        const events = localStorage.getItem(LOCAL_KEYS.events)
+        if (events) {
+          const parsed = JSON.parse(events)
+          if (parsed.events) {
+            await firestore.saveEvents(user.uid, parsed.events)
+            console.log('Events synced to cloud')
+          }
+        }
+        return null
+      }
+    } catch (error) {
+      console.error('Events sync failed:', error)
+      return null
+    }
+  }, [user])
+
   // 로그인 시 클라우드에서 데이터 가져오기
   useEffect(() => {
     if (user) {
@@ -111,5 +162,5 @@ export function useSync() {
     }
   }, [user, syncFromCloud])
 
-  return { syncToCloud, syncFromCloud, syncKakaoRoomsNow }
+  return { syncToCloud, syncFromCloud, syncKakaoRoomsNow, syncEventsNow }
 }
