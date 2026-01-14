@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { EventSource, EventItem } from '@/types'
+import type { EventSource, EventItem, EventType } from '@/types'
 
 interface CrawlError {
   sourceId: string
@@ -154,6 +154,7 @@ async function crawlOnOffMix(source: EventSource): Promise<EventItem[]> {
       const detail = await fetchOnOffMixDetail(eventId)
 
       if (detail && detail.title) {
+        const tags = detail.tags.length > 0 ? detail.tags : source.keywords
         events.push({
           id: `onoffmix-${eventId}`,
           sourceId: source.id,
@@ -166,7 +167,8 @@ async function crawlOnOffMix(source: EventSource): Promise<EventItem[]> {
           isOnline: detail.location.includes('온라인'),
           registrationUrl: `https://onoffmix.com/event/${eventId}`,
           cost: detail.cost,
-          tags: detail.tags.length > 0 ? detail.tags : source.keywords,
+          tags,
+          eventType: detectEventType(detail.title, tags),
           status: 'upcoming',
           crawledAt: new Date().toISOString(),
         })
@@ -201,11 +203,12 @@ async function crawlMeetup(source: EventSource): Promise<EventItem[]> {
                          Array.isArray(data) ? data.filter((d: Record<string, unknown>) => d['@type'] === 'Event') : []
 
         for (const event of eventList) {
+          const title = event.name || '제목 없음'
           events.push({
             id: `meetup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             sourceId: source.id,
             platform: 'meetup',
-            title: event.name || '제목 없음',
+            title,
             description: event.description?.replace(/<[^>]+>/g, '').substring(0, 300),
             eventDate: event.startDate || new Date().toISOString(),
             eventEndDate: event.endDate,
@@ -216,6 +219,7 @@ async function crawlMeetup(source: EventSource): Promise<EventItem[]> {
             organizer: event.organizer?.name,
             cost: event.offers?.price === 0 ? '무료' : event.offers?.price ? `${event.offers.price}원` : '정보 없음',
             tags: source.keywords,
+            eventType: detectEventType(title, source.keywords),
             status: 'upcoming',
             crawledAt: new Date().toISOString(),
           })
@@ -241,6 +245,86 @@ async function crawlFesta(source: EventSource): Promise<EventItem[]> {
   return []
 }
 
+// 이벤트 유형 감지
+function detectEventType(title: string, tags: string[]): EventType {
+  const text = (title + ' ' + tags.join(' ')).toLowerCase()
+
+  if (text.includes('세미나') || text.includes('seminar') || text.includes('강연') || text.includes('특강')) {
+    return 'seminar'
+  }
+  if (text.includes('컨퍼런스') || text.includes('conference') || text.includes('con ') || text.includes('summit')) {
+    return 'conference'
+  }
+  if (text.includes('워크숍') || text.includes('workshop') || text.includes('핸즈온') || text.includes('hands-on')) {
+    return 'workshop'
+  }
+  if (text.includes('밋업') || text.includes('meetup') || text.includes('모임') || text.includes('네트워킹')) {
+    return 'networking'
+  }
+  if (text.includes('스터디') || text.includes('study') || text.includes('부트캠프') || text.includes('bootcamp')) {
+    return 'study'
+  }
+
+  return 'other'
+}
+
+// OKKY 이벤트 파싱 (IT 행사 게시판)
+async function crawlOkky(): Promise<EventItem[]> {
+  const events: EventItem[] = []
+
+  try {
+    // OKKY events 페이지 (IT 행사)
+    const html = await fetchWithHeaders('https://okky.kr/events')
+
+    // JSON 데이터 추출 (페이지에 __NEXT_DATA__ 형식으로 포함됨)
+    const nextDataMatch = html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/)
+
+    if (nextDataMatch) {
+      const nextData = JSON.parse(nextDataMatch[1])
+      const articles = nextData?.props?.pageProps?.articles?.content || []
+
+      for (const article of articles.slice(0, 20)) {
+        // IT 행사 카테고리만 필터 (promote 제외)
+        if (article.category?.code === 'promote') continue
+
+        const title = article.title || ''
+        const tags = article.tags?.map((t: { name: string }) => t.name) || []
+
+        // 세미나/컨퍼런스 관련 키워드 확인
+        const isSeminarConference = /세미나|컨퍼런스|강연|특강|워크숍|밋업|summit|conference|seminar|workshop|meetup/i.test(title + tags.join(' '))
+
+        if (!isSeminarConference && article.category?.code !== 'it') continue
+
+        const eventType = detectEventType(title, tags)
+
+        events.push({
+          id: `okky-${article.id}`,
+          sourceId: 'okky-events',
+          platform: 'okky',
+          title: title,
+          description: article.contentExcerpt?.substring(0, 300) || '',
+          eventDate: article.dateCreated || new Date().toISOString(),
+          location: '상세 내용 참조',
+          isOnline: /온라인|zoom|비대면|화상/i.test(title),
+          registrationUrl: `https://okky.kr/articles/${article.id}`,
+          organizer: article.author?.nickname,
+          tags: tags.slice(0, 5),
+          eventType,
+          status: 'upcoming',
+          crawledAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    console.log(`OKKY: crawled ${events.length} events`)
+  } catch (error) {
+    console.error('OKKY crawl error:', error)
+    throw error
+  }
+
+  return events
+}
+
 // 플랫폼별 크롤러 선택
 async function crawlSource(source: EventSource): Promise<EventItem[]> {
   switch (source.platform) {
@@ -250,6 +334,8 @@ async function crawlSource(source: EventSource): Promise<EventItem[]> {
       return crawlMeetup(source)
     case 'festa':
       return crawlFesta(source)
+    case 'okky':
+      return crawlOkky()
     default:
       return []
   }

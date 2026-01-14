@@ -174,7 +174,7 @@ export interface NewsTrendItem {
 // ===== 이벤트 모니터링 =====
 
 // 이벤트 소스 플랫폼
-export type EventSourcePlatform = 'onoffmix' | 'festa' | 'meetup' | 'custom';
+export type EventSourcePlatform = 'onoffmix' | 'festa' | 'meetup' | 'okky' | 'custom';
 
 // 이벤트 소스 (크롤링할 URL)
 export interface EventSource {
@@ -187,6 +187,9 @@ export interface EventSource {
   lastCrawledAt?: string;
   createdAt: string;
 }
+
+// 이벤트 유형
+export type EventType = 'seminar' | 'conference' | 'meetup' | 'workshop' | 'study' | 'networking' | 'other';
 
 // 개별 이벤트
 export interface EventItem {
@@ -205,6 +208,7 @@ export interface EventItem {
   cost?: string; // 무료, 10,000원 등
   capacity?: string; // 정원 70명 등
   tags: string[];
+  eventType?: EventType; // 이벤트 유형
   status: 'upcoming' | 'ongoing' | 'ended';
   crawledAt: string;
 }

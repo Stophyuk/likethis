@@ -5,23 +5,21 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { RefreshCw, ExternalLink, Calendar, MapPin, Loader2, Sparkles, Clock, DollarSign } from 'lucide-react'
-import type { EventSource, EventItem, EventSourcePlatform } from '@/types'
+import type { EventSource, EventItem, EventSourcePlatform, EventType } from '@/types'
 import { useSync } from '@/hooks/useSync'
 
 const STORAGE_KEY = 'likethis_events'
 
 // 기본 등록 소스 목록
 const DEFAULT_SOURCES: EventSource[] = [
+  { id: 'okky-events', platform: 'okky', name: 'OKKY 세미나/컨퍼런스', url: 'https://okky.kr/events', keywords: ['세미나', '컨퍼런스'], isActive: true, createdAt: new Date().toISOString() },
+  { id: 'onoffmix-seminar', platform: 'onoffmix', name: '세미나', url: 'https://onoffmix.com/event?s=세미나', keywords: ['세미나'], isActive: true, createdAt: new Date().toISOString() },
+  { id: 'onoffmix-conference', platform: 'onoffmix', name: '컨퍼런스', url: 'https://onoffmix.com/event?s=컨퍼런스', keywords: ['컨퍼런스'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'onoffmix-startup', platform: 'onoffmix', name: '스타트업', url: 'https://onoffmix.com/event?s=스타트업', keywords: ['스타트업'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'onoffmix-ai', platform: 'onoffmix', name: 'AI/인공지능', url: 'https://onoffmix.com/event?s=AI', keywords: ['AI', '인공지능'], isActive: true, createdAt: new Date().toISOString() },
-  { id: 'onoffmix-entrepreneur', platform: 'onoffmix', name: '창업', url: 'https://onoffmix.com/event?s=창업', keywords: ['창업'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'onoffmix-developer', platform: 'onoffmix', name: '개발자', url: 'https://onoffmix.com/event?s=개발자', keywords: ['개발', '코딩'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'onoffmix-tech', platform: 'onoffmix', name: '테크', url: 'https://onoffmix.com/event?s=테크', keywords: ['테크', 'tech'], isActive: true, createdAt: new Date().toISOString() },
-  { id: 'onoffmix-networking', platform: 'onoffmix', name: '네트워킹', url: 'https://onoffmix.com/event?s=네트워킹', keywords: ['네트워킹'], isActive: true, createdAt: new Date().toISOString() },
-  { id: 'onoffmix-hackathon', platform: 'onoffmix', name: '해커톤', url: 'https://onoffmix.com/event?s=해커톤', keywords: ['해커톤'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'meetup-tech', platform: 'meetup', name: 'Seoul Tech', url: 'https://www.meetup.com/find/?location=kr--Seoul&source=EVENTS&keywords=tech', keywords: ['tech'], isActive: true, createdAt: new Date().toISOString() },
-  { id: 'meetup-startup', platform: 'meetup', name: 'Seoul Startup', url: 'https://www.meetup.com/find/?location=kr--Seoul&source=EVENTS&keywords=startup', keywords: ['startup'], isActive: true, createdAt: new Date().toISOString() },
-  { id: 'meetup-ai', platform: 'meetup', name: 'Seoul AI', url: 'https://www.meetup.com/find/?location=kr--Seoul&source=EVENTS&keywords=AI', keywords: ['AI'], isActive: true, createdAt: new Date().toISOString() },
 ]
 
 // 플랫폼별 색상
@@ -29,7 +27,19 @@ const platformColors: Record<EventSourcePlatform, string> = {
   onoffmix: '#FF6B35',
   meetup: '#F65858',
   festa: '#7B68EE',
+  okky: '#3B82F6',
   custom: '#6B7280',
+}
+
+// 이벤트 유형별 설정
+const eventTypeConfig: Record<EventType, { label: string; emoji: string; color: string }> = {
+  seminar: { label: '세미나', emoji: '🎤', color: '#8B5CF6' },
+  conference: { label: '컨퍼런스', emoji: '🎪', color: '#EC4899' },
+  meetup: { label: '밋업', emoji: '🤝', color: '#10B981' },
+  workshop: { label: '워크숍', emoji: '🔧', color: '#F59E0B' },
+  study: { label: '스터디', emoji: '📚', color: '#3B82F6' },
+  networking: { label: '네트워킹', emoji: '🌐', color: '#6366F1' },
+  other: { label: '기타', emoji: '📌', color: '#6B7280' },
 }
 
 // 추천 verdict 색상
@@ -116,6 +126,7 @@ export default function EventsPage() {
   const [lastCrawled, setLastCrawled] = useState<string | null>(null)
   const [filterVerdict, setFilterVerdict] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'ongoing' | 'ended'>('upcoming')
+  const [filterEventType, setFilterEventType] = useState<EventType | 'all'>('all')
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'all' | 'recommended'>('all')
   const { syncEventsNow } = useSync()
@@ -240,8 +251,20 @@ export default function EventsPage() {
     if (viewMode === 'recommended' && !e.recommendation) return false
     if (filterVerdict && e.recommendation?.verdict !== filterVerdict) return false
     if (filterStatus !== 'all' && e.currentStatus !== filterStatus) return false
+    if (filterEventType !== 'all' && e.eventType !== filterEventType) return false
     return true
   })
+
+  // 이벤트 유형별 통계
+  const eventTypeStats = {
+    seminar: eventsWithStatus.filter(e => e.eventType === 'seminar').length,
+    conference: eventsWithStatus.filter(e => e.eventType === 'conference').length,
+    meetup: eventsWithStatus.filter(e => e.eventType === 'meetup').length,
+    workshop: eventsWithStatus.filter(e => e.eventType === 'workshop').length,
+    study: eventsWithStatus.filter(e => e.eventType === 'study').length,
+    networking: eventsWithStatus.filter(e => e.eventType === 'networking').length,
+    other: eventsWithStatus.filter(e => e.eventType === 'other' || !e.eventType).length,
+  }
 
   // 추천 이벤트만 볼 때는 점수순, 아니면 날짜순
   const sortedEvents = viewMode === 'recommended'
@@ -345,6 +368,33 @@ export default function EventsPage() {
         >
           종료 ({statusStats.ended})
         </Button>
+      </div>
+
+      {/* 이벤트 유형 필터 */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-sm text-gray-500 mr-2">유형:</span>
+        <Button
+          variant={filterEventType === 'all' ? 'secondary' : 'ghost'}
+          size="sm"
+          onClick={() => setFilterEventType('all')}
+        >
+          전체
+        </Button>
+        {(Object.keys(eventTypeConfig) as EventType[]).map(type => {
+          const count = eventTypeStats[type]
+          if (count === 0) return null
+          const config = eventTypeConfig[type]
+          return (
+            <Button
+              key={type}
+              variant={filterEventType === type ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setFilterEventType(type)}
+            >
+              {config.emoji} {config.label} ({count})
+            </Button>
+          )
+        })}
       </div>
 
       {/* 뷰 모드 & AI 추천 필터 */}
