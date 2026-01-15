@@ -7,6 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ArrowLeft, Upload, FileText, Loader2, Database, Trash2, Link2, Download, Lightbulb, Briefcase, BookOpen, Zap, WifiOff } from 'lucide-react'
 import { parseKakaoCsv, ChatMessage } from '@/lib/csv-parser'
+
+// 오프라인 에러인지 확인
+const isOfflineError = (error: unknown): boolean => {
+  if (error instanceof Error) {
+    return error.message.includes('offline') || error.message.includes('network')
+  }
+  return false
+}
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
 
@@ -59,12 +67,12 @@ export default function KakaoRoomPage() {
   const [allInsights, setAllInsights] = useState<firestore.Insight[]>([])
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
-  const [isOnline, setIsOnline] = useState(true)
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof window !== 'undefined' ? navigator.onLine : true
+  )
 
   // 온라인/오프라인 상태 감지
   useEffect(() => {
-    // 초기 상태 설정
-    setIsOnline(navigator.onLine)
 
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
@@ -99,21 +107,27 @@ export default function KakaoRoomPage() {
           setAccumulatedData(data)
         }
       } catch (error) {
-        console.error('Failed to load chat messages:', error)
+        if (!isOfflineError(error)) {
+          console.error('Failed to load chat messages:', error)
+        }
       }
 
       try {
         const h = await firestore.getInsightHistoryAll(user.uid, roomId)
         setInsightHistory(h)
       } catch (error) {
-        console.error('Failed to load insight history:', error)
+        if (!isOfflineError(error)) {
+          console.error('Failed to load insight history:', error)
+        }
       }
 
       try {
         const data = await firestore.getAllInsights(user.uid, roomId)
         setAllInsights(data.insights)
       } catch (error) {
-        console.error('Failed to load insights:', error)
+        if (!isOfflineError(error)) {
+          console.error('Failed to load insights:', error)
+        }
       }
     }
 
@@ -158,8 +172,12 @@ export default function KakaoRoomPage() {
       setAccumulatedData(updated)
       setNewMessages([]) // 업로드된 메시지 초기화
     } catch (error) {
-      console.error('Failed to save messages:', error)
-      alert('저장에 실패했습니다. 다시 시도해주세요.')
+      if (isOfflineError(error)) {
+        alert('오프라인 상태에서는 저장할 수 없습니다. 인터넷 연결을 확인해주세요.')
+      } else {
+        console.error('Failed to save messages:', error)
+        alert('저장에 실패했습니다. 다시 시도해주세요.')
+      }
     } finally {
       setSaving(false)
     }

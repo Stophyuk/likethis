@@ -4,6 +4,14 @@ import { useEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
 import * as firestore from '@/lib/firebase/firestore'
 
+// 오프라인 에러인지 확인
+const isOfflineError = (error: unknown): boolean => {
+  if (error instanceof Error) {
+    return error.message.includes('offline') || error.message.includes('network')
+  }
+  return false
+}
+
 // localStorage 키들
 const LOCAL_KEYS = {
   platforms: 'likethis_platforms',
@@ -71,7 +79,10 @@ export function useSync() {
 
       console.log('Synced to cloud')
     } catch (error) {
-      console.error('Sync to cloud failed:', error)
+      // 오프라인 에러는 조용히 무시
+      if (!isOfflineError(error)) {
+        console.error('Sync to cloud failed:', error)
+      }
     }
   }, [user])
 
@@ -116,7 +127,10 @@ export function useSync() {
 
       console.log('Synced from cloud')
     } catch (error) {
-      console.error('Sync from cloud failed:', error)
+      // 오프라인 에러는 조용히 무시
+      if (!isOfflineError(error)) {
+        console.error('Sync from cloud failed:', error)
+      }
     }
   }, [user])
 
@@ -136,7 +150,9 @@ export function useSync() {
         console.log('Kakao rooms synced immediately')
       }
     } catch (error) {
-      console.error('Kakao rooms sync failed:', error)
+      if (!isOfflineError(error)) {
+        console.error('Kakao rooms sync failed:', error)
+      }
     }
   }, [user])
 
@@ -172,7 +188,9 @@ export function useSync() {
         return null
       }
     } catch (error) {
-      console.error('Events sync failed:', error)
+      if (!isOfflineError(error)) {
+        console.error('Events sync failed:', error)
+      }
       return null
     }
   }, [user])
