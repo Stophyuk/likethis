@@ -20,18 +20,25 @@ export function useSync() {
   const syncToCloud = useCallback(async () => {
     if (!user) return
 
+    // 오프라인 상태면 동기화 스킵
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
+
     try {
-      // 설정 동기화
+      // 설정 동기화 - undefined 필드는 제외
       const platforms = localStorage.getItem(LOCAL_KEYS.platforms)
       const interests = localStorage.getItem(LOCAL_KEYS.interests)
       const profileUrls = localStorage.getItem(LOCAL_KEYS.profileUrls)
 
-      if (platforms || interests || profileUrls) {
-        await firestore.saveUserSettings(user.uid, {
-          platforms: platforms ? JSON.parse(platforms) : undefined,
-          interests: interests ? JSON.parse(interests) : undefined,
-          profileUrls: profileUrls ? JSON.parse(profileUrls) : undefined,
-        })
+      // 실제 값이 있는 필드만 객체에 포함
+      const settings: Record<string, unknown> = {}
+      if (platforms) settings.platforms = JSON.parse(platforms)
+      if (interests) settings.interests = JSON.parse(interests)
+      if (profileUrls) settings.profileUrls = JSON.parse(profileUrls)
+
+      if (Object.keys(settings).length > 0) {
+        await firestore.saveUserSettings(user.uid, settings)
       }
 
       // 카카오 방 동기화
@@ -71,6 +78,11 @@ export function useSync() {
   // 클라우드 → 로컬 동기화 (로그인 시)
   const syncFromCloud = useCallback(async () => {
     if (!user) return
+
+    // 오프라인 상태면 동기화 스킵
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
 
     try {
       // 설정 가져오기
@@ -112,6 +124,11 @@ export function useSync() {
   const syncKakaoRoomsNow = useCallback(async () => {
     if (!user) return
 
+    // 오프라인 상태면 동기화 스킵
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
+
     try {
       const kakaoRooms = localStorage.getItem(LOCAL_KEYS.kakaoRooms)
       if (kakaoRooms) {
@@ -126,6 +143,11 @@ export function useSync() {
   // 이벤트 즉시 동기화 (병합 저장)
   const syncEventsNow = useCallback(async (newEvents?: unknown[]) => {
     if (!user) return null
+
+    // 오프라인 상태면 동기화 스킵
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return null
+    }
 
     try {
       if (newEvents && newEvents.length > 0) {

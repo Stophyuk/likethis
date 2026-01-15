@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Upload, FileText, Loader2, Database, Trash2, Link2, Download, Lightbulb, Briefcase, BookOpen, Zap } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Loader2, Database, Trash2, Link2, Download, Lightbulb, Briefcase, BookOpen, Zap, WifiOff } from 'lucide-react'
 import { parseKakaoCsv, ChatMessage } from '@/lib/csv-parser'
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
@@ -59,6 +59,24 @@ export default function KakaoRoomPage() {
   const [allInsights, setAllInsights] = useState<firestore.Insight[]>([])
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [isOnline, setIsOnline] = useState(true)
+
+  // 온라인/오프라인 상태 감지
+  useEffect(() => {
+    // 초기 상태 설정
+    setIsOnline(navigator.onLine)
+
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   // 방 정보 로드
   useEffect(() => {
@@ -72,16 +90,35 @@ export default function KakaoRoomPage() {
 
   // 축적된 메시지 및 인사이트 히스토리 로드
   useEffect(() => {
-    if (user && roomId) {
-      firestore.getChatMessages(user.uid, roomId).then(data => {
+    if (!user || !roomId || !isOnline) return
+
+    const loadData = async () => {
+      try {
+        const data = await firestore.getChatMessages(user.uid, roomId)
         if (data.totalCount > 0) {
           setAccumulatedData(data)
         }
-      })
-      firestore.getInsightHistoryAll(user.uid, roomId).then(h => setInsightHistory(h))
-      firestore.getAllInsights(user.uid, roomId).then(data => setAllInsights(data.insights))
+      } catch (error) {
+        console.error('Failed to load chat messages:', error)
+      }
+
+      try {
+        const h = await firestore.getInsightHistoryAll(user.uid, roomId)
+        setInsightHistory(h)
+      } catch (error) {
+        console.error('Failed to load insight history:', error)
+      }
+
+      try {
+        const data = await firestore.getAllInsights(user.uid, roomId)
+        setAllInsights(data.insights)
+      } catch (error) {
+        console.error('Failed to load insights:', error)
+      }
     }
-  }, [user, roomId])
+
+    loadData()
+  }, [user, roomId, isOnline])
 
   const handleFileUpload = useCallback((file: File) => {
     const reader = new FileReader()
@@ -111,6 +148,10 @@ export default function KakaoRoomPage() {
   // 메시지 저장 (축적)
   const handleSaveMessages = async () => {
     if (!user || newMessages.length === 0) return
+    if (!isOnline) {
+      alert('오프라인 상태에서는 저장할 수 없습니다. 인터넷 연결을 확인해주세요.')
+      return
+    }
     setSaving(true)
     try {
       const updated = await firestore.saveChatMessages(user.uid, roomId, newMessages)
@@ -118,6 +159,7 @@ export default function KakaoRoomPage() {
       setNewMessages([]) // 업로드된 메시지 초기화
     } catch (error) {
       console.error('Failed to save messages:', error)
+      alert('저장에 실패했습니다. 다시 시도해주세요.')
     } finally {
       setSaving(false)
     }
@@ -125,6 +167,11 @@ export default function KakaoRoomPage() {
 
   // 분석 실행
   const handleAnalyze = async () => {
+    if (!isOnline) {
+      alert('오프라인 상태에서는 분석할 수 없습니다. 인터넷 연결을 확인해주세요.')
+      return
+    }
+
     let messagesToAnalyze: ChatMessage[] = []
 
     if (newMessages.length > 0 && user) {
@@ -185,6 +232,10 @@ export default function KakaoRoomPage() {
   // 축적된 메시지 및 인사이트 삭제
   const handleClearMessages = async () => {
     if (!user) return
+    if (!isOnline) {
+      alert('오프라인 상태에서는 삭제할 수 없습니다. 인터넷 연결을 확인해주세요.')
+      return
+    }
     try {
       await firestore.deleteChatMessages(user.uid, roomId)
       await firestore.deleteInsightHistory(user.uid, roomId)
@@ -282,6 +333,21 @@ ${i.content}
           <p className="text-gray-600">CSV 파일을 업로드하여 인사이트를 추출하세요</p>
         </div>
       </div>
+
+      {/* 오프라인 상태 배너 */}
+      {!isOnline && (
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-3 text-yellow-800">
+              <WifiOff className="w-5 h-5" />
+              <div>
+                <p className="font-medium">오프라인 상태입니다</p>
+                <p className="text-sm text-yellow-700">인터넷 연결을 확인해주세요. 연결되면 자동으로 데이터를 불러옵니다.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 축적된 데이터 상태 */}
       {accumulatedData && accumulatedData.totalCount > 0 && (
