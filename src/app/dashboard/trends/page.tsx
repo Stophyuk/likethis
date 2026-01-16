@@ -10,6 +10,14 @@ import type { TrendItem, TrendCollection, TrendSource, NewsTrendItem, NewsTrendP
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
 
+// 오프라인 에러인지 확인
+const isOfflineError = (error: unknown): boolean => {
+  if (error instanceof Error) {
+    return error.message.includes('offline') || error.message.includes('network')
+  }
+  return false
+}
+
 const STORAGE_KEY = 'likethis_trends'
 
 function getToday() {
@@ -117,7 +125,9 @@ export default function TrendsPage() {
       setNewsTrends(data.items)
       setLastCrawled(data.crawledAt)
     } catch (error) {
-      console.error('Failed to load news trends:', error)
+      if (!isOfflineError(error)) {
+        console.error('Failed to load news trends:', error)
+      }
     } finally {
       setNewsLoading(false)
     }

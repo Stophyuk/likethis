@@ -201,7 +201,12 @@ export default function KakaoRoomPage() {
         messagesToAnalyze = updated.messages
         setNewMessages([])
       } catch (error) {
-        console.error('Failed to save messages:', error)
+        if (isOfflineError(error)) {
+          alert('오프라인 상태에서는 저장할 수 없습니다. 인터넷 연결을 확인해주세요.')
+        } else {
+          console.error('Failed to save messages:', error)
+        }
+        setSaving(false)
         return
       } finally {
         setSaving(false)
