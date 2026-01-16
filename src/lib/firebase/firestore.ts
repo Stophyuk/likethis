@@ -221,10 +221,12 @@ export async function deleteChatMessages(uid: string, roomId: string): Promise<v
 
 // ===== 인사이트 히스토리 =====
 export interface Insight {
-  category: 'tech' | 'business' | 'resource' | 'tip'
+  category: 'command' | 'number' | 'solution' | 'tool' | 'trend' | 'business' | 'tech' | 'resource' | 'tip'
   title: string
   content: string
   tags: string[]
+  sourceQuotes?: string[]
+  extractedAt?: string
 }
 
 export interface InsightHistory {

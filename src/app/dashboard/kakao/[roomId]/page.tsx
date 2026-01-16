@@ -28,16 +28,24 @@ interface Room {
 
 // 새로운 인사이트 중심 응답 구조
 interface InsightItem {
-  category: 'tech' | 'business' | 'resource' | 'tip'
+  category: 'command' | 'number' | 'solution' | 'tool' | 'trend' | 'business' | 'tech' | 'resource' | 'tip'
   title: string
   content: string
   tags: string[]
+  sourceQuotes?: string[]
+  extractedAt?: string
+}
+
+interface ResourceItem {
+  url: string
+  title?: string
+  description?: string
 }
 
 interface AnalysisResult {
   insights: InsightItem[]
   summary: string
-  resources: string[]
+  resources: (string | ResourceItem)[]
   noInsights?: boolean
   _meta?: {
     totalMessages: number
@@ -48,7 +56,7 @@ interface AnalysisResult {
   }
 }
 
-type CategoryFilter = 'all' | 'tech' | 'business' | 'resource' | 'tip'
+type CategoryFilter = 'all' | 'command' | 'number' | 'solution' | 'tool' | 'trend' | 'business'
 
 export default function KakaoRoomPage() {
   const params = useParams()
@@ -67,9 +75,23 @@ export default function KakaoRoomPage() {
   const [allInsights, setAllInsights] = useState<firestore.Insight[]>([])
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
   const [isOnline, setIsOnline] = useState(() =>
     typeof window !== 'undefined' ? navigator.onLine : true
   )
+
+  // 인사이트 카드 펼치기/접기
+  const toggleInsight = (idx: number) => {
+    setExpandedInsights(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(idx)) {
+        newSet.delete(idx)
+      } else {
+        newSet.add(idx)
+      }
+      return newSet
+    })
+  }
 
   // 온라인/오프라인 상태 감지
   useEffect(() => {
@@ -139,6 +161,7 @@ export default function KakaoRoomPage() {
     reader.onload = (e) => {
       const content = e.target?.result as string
       const parsed = parseKakaoCsv(content)
+      console.log('CSV parsed:', parsed.length, 'messages')
       setNewMessages(parsed)
       setResult(null)
     }
@@ -185,6 +208,8 @@ export default function KakaoRoomPage() {
 
   // 분석 실행
   const handleAnalyze = async () => {
+    console.log('handleAnalyze called', { isOnline, user: !!user, newMessages: newMessages.length, accumulatedData: accumulatedData?.totalCount })
+
     if (!isOnline) {
       alert('오프라인 상태에서는 분석할 수 없습니다. 인터넷 연결을 확인해주세요.')
       return
@@ -192,25 +217,9 @@ export default function KakaoRoomPage() {
 
     let messagesToAnalyze: ChatMessage[] = []
 
-    if (newMessages.length > 0 && user) {
-      // 새 메시지를 먼저 축적
-      setSaving(true)
-      try {
-        const updated = await firestore.saveChatMessages(user.uid, roomId, newMessages)
-        setAccumulatedData(updated)
-        messagesToAnalyze = updated.messages
-        setNewMessages([])
-      } catch (error) {
-        if (isOfflineError(error)) {
-          alert('오프라인 상태에서는 저장할 수 없습니다. 인터넷 연결을 확인해주세요.')
-        } else {
-          console.error('Failed to save messages:', error)
-        }
-        setSaving(false)
-        return
-      } finally {
-        setSaving(false)
-      }
+    if (newMessages.length > 0) {
+      // 메시지는 Firestore에 저장하지 않고 바로 분석 (1MB 제한 회피)
+      messagesToAnalyze = newMessages
     } else if (accumulatedData && accumulatedData.messages.length > 0) {
       messagesToAnalyze = accumulatedData.messages
     }
@@ -230,21 +239,32 @@ export default function KakaoRoomPage() {
       const data = await res.json() as AnalysisResult
       setResult(data)
 
-      // 인사이트 히스토리 저장 (중복 제거됨)
+      // 인사이트 바로 표시 (로그인 여부 무관)
+      if (data.insights && data.insights.length > 0) {
+        setAllInsights(data.insights as firestore.Insight[])
+      }
+
+      // 인사이트 히스토리 저장 (로그인 시에만)
       if (user && data.insights && data.insights.length > 0) {
+        // resources를 문자열 배열로 변환 (Firestore 저장용)
+        const resourceUrls = (data.resources || []).map(r =>
+          typeof r === 'string' ? r : r.url
+        )
         const savedHistory = await firestore.saveInsightHistory(
           user.uid,
           roomId,
           data.insights as firestore.Insight[],
           data.summary || '',
-          data.resources || [],
+          resourceUrls,
           messagesToAnalyze.length
         )
         setInsightHistory(prev => [savedHistory, ...prev])
-        // 전체 인사이트 새로고침
+        // 전체 인사이트 새로고침 (Firestore에서)
         const updated = await firestore.getAllInsights(user.uid, roomId)
         setAllInsights(updated.insights)
       }
+      // 분석 완료 후 업로드된 메시지 클리어
+      setNewMessages([])
     } catch (error) {
       console.error('Analysis failed:', error)
     } finally {
@@ -303,8 +323,14 @@ ${i.content}
   // 카테고리 아이콘
   const getCategoryEmoji = (category: string) => {
     switch (category) {
+      case 'command': return '⌨️'
+      case 'number': return '🔢'
+      case 'solution': return '💡'
+      case 'tool': return '🔧'
+      case 'trend': return '📈'
+      case 'business': return '💰'
+      // 이전 카테고리 호환
       case 'tech': return '💡'
-      case 'business': return '💼'
       case 'resource': return '📚'
       case 'tip': return '⚡'
       default: return '💡'
@@ -313,8 +339,14 @@ ${i.content}
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
-      case 'tech': return '기술'
+      case 'command': return '명령어'
+      case 'number': return '수치'
+      case 'solution': return '해결'
+      case 'tool': return '도구'
+      case 'trend': return '트렌드'
       case 'business': return '비즈니스'
+      // 이전 카테고리 호환
+      case 'tech': return '기술'
       case 'resource': return '자료'
       case 'tip': return '팁'
       default: return category
@@ -329,10 +361,12 @@ ${i.content}
   // 카테고리별 개수
   const categoryCounts = {
     all: allInsights.length,
-    tech: allInsights.filter(i => i.category === 'tech').length,
+    command: allInsights.filter(i => i.category === 'command').length,
+    number: allInsights.filter(i => i.category === 'number').length,
+    solution: allInsights.filter(i => i.category === 'solution').length,
+    tool: allInsights.filter(i => i.category === 'tool').length,
+    trend: allInsights.filter(i => i.category === 'trend').length,
     business: allInsights.filter(i => i.category === 'business').length,
-    resource: allInsights.filter(i => i.category === 'resource').length,
-    tip: allInsights.filter(i => i.category === 'tip').length,
   }
 
   if (!room) {
@@ -481,7 +515,7 @@ ${i.content}
         <Card className="bg-gray-50">
           <CardContent className="py-4">
             <p className="text-sm text-gray-700">{result.summary}</p>
-            {result._meta && (
+            {result._meta?.totalMessages && (
               <p className="text-xs text-gray-500 mt-2">
                 {result._meta.totalMessages.toLocaleString()}개 메시지에서 {result.insights?.length || 0}개 인사이트 추출
               </p>
@@ -505,7 +539,7 @@ ${i.content}
           <CardContent>
             {/* 카테고리 필터 */}
             <div className="flex flex-wrap gap-2 mb-4">
-              {(['all', 'tech', 'business', 'resource', 'tip'] as const).map(cat => (
+              {(['all', 'command', 'number', 'solution', 'tool', 'trend', 'business'] as const).map(cat => (
                 <Button
                   key={cat}
                   variant={categoryFilter === cat ? 'default' : 'outline'}
@@ -514,42 +548,70 @@ ${i.content}
                   className="gap-1"
                 >
                   {cat === 'all' && '전체'}
-                  {cat === 'tech' && <><Lightbulb className="w-3 h-3" /> 기술</>}
-                  {cat === 'business' && <><Briefcase className="w-3 h-3" /> 비즈니스</>}
-                  {cat === 'resource' && <><BookOpen className="w-3 h-3" /> 자료</>}
-                  {cat === 'tip' && <><Zap className="w-3 h-3" /> 팁</>}
-                  <span className="text-xs opacity-70">({categoryCounts[cat]})</span>
+                  {cat === 'command' && '⌨️ 명령어'}
+                  {cat === 'number' && '🔢 수치'}
+                  {cat === 'solution' && '💡 해결'}
+                  {cat === 'tool' && '🔧 도구'}
+                  {cat === 'trend' && '📈 트렌드'}
+                  {cat === 'business' && '💰 비즈니스'}
+                  <span className="text-xs opacity-70">({categoryCounts[cat] || 0})</span>
                 </Button>
               ))}
             </div>
 
             {/* 인사이트 목록 */}
             <div className="space-y-3">
-              {filteredInsights.map((insight, idx) => (
-                <div key={idx} className="p-4 bg-white border rounded-lg hover:shadow-sm transition-shadow">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">{getCategoryEmoji(insight.category)}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 rounded">
-                          {getCategoryLabel(insight.category)}
-                        </span>
-                        <h3 className="font-medium text-gray-900">{insight.title}</h3>
-                      </div>
-                      <p className="text-sm text-gray-600">{insight.content}</p>
-                      {insight.tags && insight.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {insight.tags.map((tag, i) => (
-                            <Badge key={i} variant="secondary" className="text-xs">
-                              #{tag}
-                            </Badge>
-                          ))}
+              {filteredInsights.map((insight, idx) => {
+                const isExpanded = expandedInsights.has(idx)
+                const hasSourceQuotes = insight.sourceQuotes && insight.sourceQuotes.length > 0
+                return (
+                  <div
+                    key={idx}
+                    className={`p-4 bg-white border rounded-lg transition-all ${hasSourceQuotes ? 'cursor-pointer hover:shadow-md' : 'hover:shadow-sm'}`}
+                    onClick={() => hasSourceQuotes && toggleInsight(idx)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">{getCategoryEmoji(insight.category)}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 rounded">
+                            {getCategoryLabel(insight.category)}
+                          </span>
+                          <h3 className="font-medium text-gray-900">{insight.title}</h3>
+                          {hasSourceQuotes && (
+                            <span className="text-xs text-gray-400 ml-auto">
+                              {isExpanded ? '▲ 접기' : '▼ 원문 보기'}
+                            </span>
+                          )}
                         </div>
-                      )}
+                        <p className="text-sm text-gray-600">{insight.content}</p>
+                        {insight.tags && insight.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {insight.tags.map((tag, i) => (
+                              <Badge key={i} variant="secondary" className="text-xs">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                        {/* 원본 대화 인용 (펼쳤을 때만) */}
+                        {isExpanded && hasSourceQuotes && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <p className="text-xs font-medium text-gray-500 mb-2">💬 원본 대화</p>
+                            <div className="space-y-1">
+                              {insight.sourceQuotes!.map((quote, qi) => (
+                                <p key={qi} className="text-xs text-gray-500 bg-gray-50 p-2 rounded italic">
+                                  &ldquo;{quote}&rdquo;
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
 
               {filteredInsights.length === 0 && (
                 <p className="text-center text-gray-500 py-8">
@@ -567,22 +629,30 @@ ${i.content}
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Link2 className="w-5 h-5 text-blue-500" />
-              공유된 자료
+              공유된 자료 ({result.resources.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-2">
-              {result.resources.map((resource, idx) => (
-                <li key={idx} className="text-sm">
-                  {resource.startsWith('http') ? (
-                    <a href={resource} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all">
-                      {resource}
+            <ul className="space-y-3">
+              {result.resources.map((resource, idx) => {
+                // 문자열 또는 객체 형식 모두 지원
+                const url = typeof resource === 'string' ? resource : resource.url
+                const title = typeof resource === 'object' ? resource.title : null
+                const description = typeof resource === 'object' ? resource.description : null
+
+                if (!url) return null
+
+                return (
+                  <li key={idx} className="text-sm border-b pb-2 last:border-0">
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline break-all font-medium">
+                      {title || url}
                     </a>
-                  ) : (
-                    <span>{resource}</span>
-                  )}
-                </li>
-              ))}
+                    {description && (
+                      <p className="text-gray-600 mt-1">{description}</p>
+                    )}
+                  </li>
+                )
+              })}
             </ul>
           </CardContent>
         </Card>
