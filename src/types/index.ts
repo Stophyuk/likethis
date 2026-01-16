@@ -212,3 +212,68 @@ export interface EventItem {
   status: 'upcoming' | 'ongoing' | 'ended';
   crawledAt: string;
 }
+
+// ===== 프로필 가이드 =====
+
+// 사용자 프로필 정보 (AI 프로필 생성용)
+export interface UserProfileInfo {
+  name: string;
+  role: string;              // 직업/역할
+  expertise: string[];       // 전문분야
+  targetAudience: string;    // 목표 청중
+  goals: string;             // 달성하고 싶은 것
+}
+
+// 플랫폼별 프로필 추천
+export interface PlatformProfileRecommendation {
+  platform: Platform;
+  bio: string;               // 생성된 바이오 문구
+  bioAlternatives: string[]; // 대안 문구
+  profilePhotoTips: string[];
+  headerImageTips: string[];
+  linkRecommendations: string[];
+}
+
+// ===== 크로스 포스팅 히스토리 =====
+
+// 플랫폼별 변환된 컨텐츠
+export interface PlatformContent {
+  platform: Platform;
+  content: string;
+  hashtags: string[];
+  postedAt?: string;         // 포스팅한 시간 (수동 표시)
+}
+
+// 포스팅 히스토리
+export interface PostingHistory {
+  id: string;
+  topic: string;
+  keyPoints: string;
+  originalDraft: string;
+  platformContents: PlatformContent[];
+  createdAt: string;
+}
+
+// ===== 한영 동시 생성 =====
+
+// 이중 언어 콘텐츠
+export interface BilingualContent {
+  ko: string;
+  en: string;
+}
+
+// 이중 언어 변환 결과
+export interface BilingualTransformResult {
+  ko: {
+    transformed_content: string;
+    hashtags: string[];
+    tips: string[];
+    character_count: number;
+  };
+  en: {
+    transformed_content: string;
+    hashtags: string[];
+    tips: string[];
+    character_count: number;
+  };
+}

@@ -394,3 +394,63 @@ export async function getNewsTrendsByPlatform(uid: string, platform: string): Pr
   const trends = await getNewsTrends(uid)
   return trends.items.filter(item => item.platform === platform)
 }
+
+// ===== 포스팅 히스토리 =====
+import type { PostingHistory, PlatformContent } from '@/types'
+
+// 포스팅 히스토리 저장
+export async function savePostingHistory(
+  uid: string,
+  topic: string,
+  keyPoints: string,
+  originalDraft: string,
+  platformContents: PlatformContent[]
+): Promise<string> {
+  const id = `post_${Date.now()}`
+  const history: PostingHistory = {
+    id,
+    topic,
+    keyPoints,
+    originalDraft,
+    platformContents,
+    createdAt: new Date().toISOString(),
+  }
+
+  const ref = doc(db, 'users', uid, 'postingHistory', id)
+  await setDoc(ref, history)
+  return id
+}
+
+// 포스팅 히스토리 목록 가져오기
+export async function getPostingHistoryList(uid: string, limitCount: number = 50): Promise<PostingHistory[]> {
+  const ref = collection(db, 'users', uid, 'postingHistory')
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => d.data() as PostingHistory)
+}
+
+// 포스팅 히스토리 상세 가져오기
+export async function getPostingHistory(uid: string, id: string): Promise<PostingHistory | null> {
+  const ref = doc(db, 'users', uid, 'postingHistory', id)
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() as PostingHistory : null
+}
+
+// 포스팅 히스토리 삭제
+export async function deletePostingHistory(uid: string, id: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'postingHistory', id)
+  await setDoc(ref, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true })
+}
+
+// 플랫폼 컨텐츠 포스팅 시간 업데이트
+export async function markAsPosted(uid: string, historyId: string, platform: string): Promise<void> {
+  const history = await getPostingHistory(uid, historyId)
+  if (!history) return
+
+  const updatedContents = history.platformContents.map(pc =>
+    pc.platform === platform ? { ...pc, postedAt: new Date().toISOString() } : pc
+  )
+
+  const ref = doc(db, 'users', uid, 'postingHistory', historyId)
+  await setDoc(ref, { platformContents: updatedContents }, { merge: true })
+}

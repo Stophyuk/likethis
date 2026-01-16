@@ -7,7 +7,7 @@ const openai = new OpenAI({
 
 export async function POST(req: NextRequest) {
   try {
-    const { topic, keyPoints, interests } = await req.json()
+    const { topic, keyPoints, interests, bilingual = false } = await req.json()
 
     if (!topic || !keyPoints) {
       return NextResponse.json(
@@ -16,7 +16,29 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const prompt = `당신은 SNS 콘텐츠 작가입니다.
+    // 이중 언어 생성 프롬프트
+    const bilingualPrompt = `당신은 SNS 콘텐츠 작가입니다.
+주어진 주제와 핵심 내용을 바탕으로 SNS에 공유할 글의 초안을 한국어와 영어 두 버전으로 작성해주세요.
+
+## 주제
+${topic}
+
+## 핵심 내용
+${keyPoints}
+
+## 작성자 관심사
+${interests?.join(', ') || '1인개발, AI, 사이드프로젝트'}
+
+## 요청
+- 친근하고 자연스러운 톤으로 작성
+- 독자의 관심을 끌 수 있는 도입부
+- 핵심 내용을 잘 전달
+- 각 언어 300-500자 정도
+- 영어는 직역이 아닌 자연스러운 영어 표현으로
+- JSON 형식: { "draft": { "ko": "한국어 초안", "en": "English draft" } }`
+
+    // 단일 언어 생성 프롬프트
+    const singlePrompt = `당신은 SNS 콘텐츠 작가입니다.
 주어진 주제와 핵심 내용을 바탕으로 SNS에 공유할 글의 초안을 작성해주세요.
 
 ## 주제
@@ -34,6 +56,8 @@ ${interests?.join(', ') || '1인개발, AI, 사이드프로젝트'}
 - 핵심 내용을 잘 전달
 - 300-500자 정도
 - JSON 형식: { "draft": "초안 내용" }`
+
+    const prompt = bilingual ? bilingualPrompt : singlePrompt
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo-preview',
