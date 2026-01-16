@@ -471,17 +471,9 @@ ${i.content}
           {/* 새로 업로드된 메시지 */}
           {newMessages.length > 0 && (
             <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-green-700">
-                  <FileText className="w-4 h-4" />
-                  <span>새로 업로드: {newMessages.length.toLocaleString()}개 메시지</span>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleSaveMessages} disabled={saving}>
-                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4 mr-1" />}
-                    저장만
-                  </Button>
-                </div>
+              <div className="flex items-center gap-2 text-sm text-green-700">
+                <FileText className="w-4 h-4" />
+                <span>새로 업로드: {newMessages.length.toLocaleString()}개 메시지</span>
               </div>
             </div>
           )}
