@@ -320,3 +320,16 @@ export interface TopicHistory {
   generatedAt: string;
   status: 'generated' | 'in_progress' | 'completed';
 }
+
+// ===== 크로스포스팅 템플릿 =====
+
+// 작성 템플릿
+export interface ComposeTemplate {
+  id: string;
+  name: string;
+  topic: string;
+  keyPoints: string;
+  bilingual: boolean;
+  createdAt: string;
+  usedCount: number;
+}

@@ -560,3 +560,56 @@ export async function updateTopicHistoryStatus(
   const ref = doc(db, 'users', uid, 'topicHistory', id)
   await setDoc(ref, { status, updatedAt: new Date().toISOString() }, { merge: true })
 }
+
+// ===== 작성 템플릿 =====
+import type { ComposeTemplate } from '@/types'
+
+// 템플릿 저장
+export async function saveComposeTemplate(
+  uid: string,
+  name: string,
+  topic: string,
+  keyPoints: string,
+  bilingual: boolean
+): Promise<string> {
+  const id = `template_${Date.now()}`
+  const template: ComposeTemplate = {
+    id,
+    name,
+    topic,
+    keyPoints,
+    bilingual,
+    createdAt: new Date().toISOString(),
+    usedCount: 0,
+  }
+
+  const ref = doc(db, 'users', uid, 'composeTemplates', id)
+  await setDoc(ref, template)
+  return id
+}
+
+// 템플릿 목록 가져오기
+export async function getComposeTemplates(uid: string, limitCount: number = 50): Promise<ComposeTemplate[]> {
+  const ref = collection(db, 'users', uid, 'composeTemplates')
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => d.data() as ComposeTemplate & { deleted?: boolean })
+    .filter(d => !d.deleted)
+}
+
+// 템플릿 삭제
+export async function deleteComposeTemplate(uid: string, id: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'composeTemplates', id)
+  await setDoc(ref, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true })
+}
+
+// 템플릿 사용 횟수 증가
+export async function incrementTemplateUsage(uid: string, id: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'composeTemplates', id)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    const data = snap.data() as ComposeTemplate
+    await setDoc(ref, { usedCount: (data.usedCount || 0) + 1 }, { merge: true })
+  }
+}

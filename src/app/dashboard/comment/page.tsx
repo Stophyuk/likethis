@@ -12,6 +12,7 @@ const COMMUNITIES = [
   { id: 'reddit', name: 'Reddit', icon: '🤖' },
   { id: 'hackernews', name: 'Hacker News', icon: '🔶' },
   { id: 'twitter', name: 'X (Twitter)', icon: '𝕏' },
+  { id: 'threads', name: 'Threads', icon: '🧵' },
   { id: 'linkedin', name: 'LinkedIn', icon: '💼' },
   { id: 'disquiet', name: 'Disquiet', icon: '🚀' },
   { id: 'producthunt', name: 'Product Hunt', icon: '🐱' },
