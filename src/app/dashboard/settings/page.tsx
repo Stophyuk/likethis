@@ -11,6 +11,7 @@ import { PLATFORM_GUIDES } from '@/lib/platform-guides'
 function getPlatformEmoji(platform: string): string {
   const emojis: Record<string, string> = {
     x: '𝕏',
+    threads: '🧵',
     producthunt: '🚀',
     medium: '📝',
     naver: '🟢',
@@ -27,6 +28,7 @@ function getPlatformEmoji(platform: string): string {
 function getUrlPlaceholder(platform: string): string {
   const placeholders: Record<string, string> = {
     x: 'https://x.com/username',
+    threads: 'https://www.threads.net/@username',
     producthunt: 'https://www.producthunt.com/@username',
     medium: 'https://medium.com/@username',
     naver: 'https://blog.naver.com/username',

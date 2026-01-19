@@ -7,6 +7,7 @@ import { Sparkles } from 'lucide-react'
 
 const platformEmojis: Record<string, string> = {
   X: '𝕏',
+  Threads: '🧵',
   ProductHunt: '🚀',
   Medium: '📝',
   Naver: '🟢',

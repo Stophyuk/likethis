@@ -454,3 +454,109 @@ export async function markAsPosted(uid: string, historyId: string, platform: str
   const ref = doc(db, 'users', uid, 'postingHistory', historyId)
   await setDoc(ref, { platformContents: updatedContents }, { merge: true })
 }
+
+// ===== AI 글감 생성 =====
+import type { TopicSuggestion, TopicHistory } from '@/types'
+
+// 전체 방의 인사이트 조회
+export async function getAllRoomsInsights(uid: string): Promise<{
+  insights: (Insight & { roomId: string; roomName?: string })[]
+  roomInsightCounts: Record<string, number>
+  totalAnalyses: number
+}> {
+  const ref = collection(db, 'users', uid, 'insightHistory')
+  const snap = await getDocs(ref)
+
+  const allHistories = snap.docs
+    .map(d => d.data() as InsightHistory)
+    .filter(d => !('deleted' in d && d.deleted))
+    .sort((a, b) => new Date(b.analyzedAt).getTime() - new Date(a.analyzedAt).getTime())
+
+  // 모든 인사이트 합치기 (중복 제거)
+  const insights: (Insight & { roomId: string; roomName?: string })[] = []
+  const seenTitles = new Set<string>()
+  const roomInsightCounts: Record<string, number> = {}
+
+  for (const history of allHistories) {
+    roomInsightCounts[history.roomId] = (roomInsightCounts[history.roomId] || 0) + history.insights.length
+
+    for (const insight of history.insights) {
+      const normalizedTitle = insight.title.toLowerCase().trim()
+      if (!seenTitles.has(normalizedTitle)) {
+        seenTitles.add(normalizedTitle)
+        insights.push({
+          ...insight,
+          roomId: history.roomId,
+        })
+      }
+    }
+  }
+
+  return {
+    insights,
+    roomInsightCounts,
+    totalAnalyses: allHistories.length,
+  }
+}
+
+// 글감 히스토리 저장
+export async function saveTopicHistory(
+  uid: string,
+  topics: TopicSuggestion[],
+  insightSummary: string,
+  totalInsightsUsed: number,
+  roomsUsed: string[]
+): Promise<string> {
+  const id = `topic_${Date.now()}`
+  const history: TopicHistory = {
+    id,
+    topics,
+    insightSummary,
+    totalInsightsUsed,
+    roomsUsed,
+    generatedAt: new Date().toISOString(),
+    status: 'generated',
+  }
+
+  const ref = doc(db, 'users', uid, 'topicHistory', id)
+  await setDoc(ref, history)
+  return id
+}
+
+// 글감 히스토리 목록 가져오기
+export async function getTopicHistoryList(uid: string, limitCount: number = 50): Promise<TopicHistory[]> {
+  const ref = collection(db, 'users', uid, 'topicHistory')
+  const q = query(ref, orderBy('generatedAt', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => d.data() as TopicHistory)
+    .filter(d => !('deleted' in d && d.deleted))
+}
+
+// 글감 히스토리 상세 가져오기
+export async function getTopicHistory(uid: string, id: string): Promise<TopicHistory | null> {
+  const ref = doc(db, 'users', uid, 'topicHistory', id)
+  const snap = await getDoc(ref)
+  if (snap.exists()) {
+    const data = snap.data() as TopicHistory & { deleted?: boolean }
+    if (data.deleted) return null
+    return data
+  }
+  return null
+}
+
+// 글감 히스토리 삭제
+export async function deleteTopicHistory(uid: string, id: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'topicHistory', id)
+  await setDoc(ref, { deleted: true, deletedAt: new Date().toISOString() }, { merge: true })
+}
+
+// 글감 히스토리 상태 업데이트
+export async function updateTopicHistoryStatus(
+  uid: string,
+  id: string,
+  status: TopicHistory['status']
+): Promise<void> {
+  const ref = doc(db, 'users', uid, 'topicHistory', id)
+  await setDoc(ref, { status, updatedAt: new Date().toISOString() }, { merge: true })
+}

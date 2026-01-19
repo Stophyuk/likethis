@@ -6,7 +6,7 @@ import { ExternalLink } from 'lucide-react'
 
 function getPlatformEmoji(platform: string): string {
   const emojis: Record<string, string> = {
-    x: '𝕏', producthunt: '🚀', medium: '📝', naver: '🟢',
+    x: '𝕏', threads: '🧵', producthunt: '🚀', medium: '📝', naver: '🟢',
     youtube: '▶️', instagram: '📸', reddit: '🤖', linkedin: '💼',
     indiehackers: '🛠️', kakao: '💬',
   }

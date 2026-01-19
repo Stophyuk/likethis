@@ -7,6 +7,7 @@ import { SetupChecklist } from '@/components/guide/SetupChecklist'
 
 const platformEmojis: Record<string, string> = {
   X: '𝕏',
+  Threads: '🧵',
   ProductHunt: '🚀',
   Medium: '📝',
   Naver: '🟢',

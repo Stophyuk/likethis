@@ -57,6 +57,63 @@ export const platformGuides: Record<Platform, PlatformGuide> = {
     ],
   },
 
+  threads: {
+    platform: 'threads',
+    name: 'Threads',
+    icon: 'Threads',
+    color: '#000000',
+    description: 'Meta의 텍스트 기반 SNS. Instagram 연동으로 빠른 성장이 가능합니다.',
+    defaultDailyGoals: [
+      { type: 'post', count: 1, description: '개발 관련 스레드 작성' },
+      { type: 'comment', count: 3, description: '다른 스레드에 댓글' },
+    ],
+    defaultWeeklyGoals: [
+      { type: 'post', count: 5, description: '주간 포스팅 목표' },
+    ],
+    defaultMonthlyGoals: [
+      { type: 'follow', count: 50, description: '관련 계정 팔로우' },
+    ],
+    tips: [
+      'Instagram 팔로워가 자동으로 연동되어 초기 성장이 빠릅니다',
+      '짧고 임팩트 있는 글이 더 많은 반응을 얻습니다',
+      '개인적인 경험과 의견을 담은 글이 인기 있습니다',
+      '이미지/카루셀을 활용하면 도달률이 높아집니다',
+      '대화형 콘텐츠(질문, 의견 요청)가 참여를 높입니다',
+      'X와 동시에 운영하면 시너지 효과가 있습니다',
+    ],
+    commentTemplates: [
+      '공감합니다! 저도 {similar_experience} 경험이 있어요.',
+      '좋은 인사이트네요. 혹시 {question}?',
+      '이거 정말 유용해요. {specific_part}이 특히 도움됐습니다.',
+      '저도 비슷하게 생각해요. 추가로 {your_opinion}도 있는 것 같아요.',
+      '대박! 이거 어떻게 하셨어요?',
+    ],
+    hashtagSuggestions: [
+      '#개발자',
+      '#코딩',
+      '#빌드인퍼블릭',
+      '#1인개발',
+      '#사이드프로젝트',
+      '#스타트업',
+      '#개발일상',
+      '#프로그래머',
+    ],
+    growthStrategy: [
+      'Instagram 계정과 연동하여 초기 팔로워 확보',
+      '매일 1개 이상 개발 관련 짧은 글 작성',
+      '인기 계정의 스레드에 양질의 댓글 달기',
+      '질문형 포스트로 대화 유도',
+      'X 콘텐츠를 Threads용으로 재가공하여 활용',
+    ],
+    setupGuide: [
+      { id: 'instagram', title: 'Instagram 연동', description: 'Instagram 계정으로 Threads 가입' },
+      { id: 'profile', title: '프로필 설정', description: 'Instagram과 다른 바이오 작성 가능' },
+      { id: 'privacy', title: '공개 계정 설정', description: '비공개 해제로 노출 극대화' },
+      { id: 'first-post', title: '첫 스레드 작성', description: '자기소개 또는 관심사 공유' },
+      { id: 'follow', title: '관련 계정 팔로우', description: '개발자/인디해커 계정 찾기' },
+    ],
+  },
+
   producthunt: {
     platform: 'producthunt',
     name: 'Product Hunt',

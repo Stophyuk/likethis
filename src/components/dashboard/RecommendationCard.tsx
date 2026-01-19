@@ -80,6 +80,7 @@ export function RecommendationCard({ recommendation, onComplete, onSkip }: Recom
 function getPlatformEmoji(platform: Platform): string {
   const emojis: Record<Platform, string> = {
     x: '𝕏',
+    threads: '🧵',
     producthunt: '🚀',
     medium: '📝',
     naver: '🟢',
@@ -96,6 +97,7 @@ function getPlatformEmoji(platform: Platform): string {
 function getPlatformColor(platform: Platform): string {
   const colors: Record<Platform, string> = {
     x: '#000000',
+    threads: '#000000',
     producthunt: '#DA552F',
     medium: '#000000',
     naver: '#03C75A',

@@ -8,7 +8,7 @@ import { PLATFORM_GUIDES } from '@/lib/platform-guides'
 
 function getPlatformEmoji(platform: string): string {
   const emojis: Record<string, string> = {
-    x: 'X', producthunt: 'PH', medium: 'M', naver: 'N',
+    x: 'X', threads: 'TH', producthunt: 'PH', medium: 'M', naver: 'N',
     youtube: 'YT', instagram: 'IG', reddit: 'R', linkedin: 'LI',
     indiehackers: 'IH', kakao: 'K',
   }

@@ -1,6 +1,7 @@
 // 플랫폼 타입
 export type Platform =
   | 'x'
+  | 'threads'
   | 'producthunt'
   | 'medium'
   | 'naver'
@@ -276,4 +277,46 @@ export interface BilingualTransformResult {
     tips: string[];
     character_count: number;
   };
+}
+
+// ===== AI 글감 생성 =====
+
+// 관련 인사이트 참조
+export interface RelatedInsight {
+  title: string;
+  content: string;
+  roomName: string;
+}
+
+// 트렌드 분석 결과 (Gemini Grounding)
+export interface TrendAnalysis {
+  currentTrends: string[];        // 최근 트렌드 키워드
+  communityBuzz: string;          // 커뮤니티 반응 요약
+  recentArticles: string[];       // 최근 관련 글/뉴스 제목
+  suggestedHook: string;          // 추천 도입부
+  searchedAt: string;             // 검색 시점
+}
+
+// 글감 제안
+export interface TopicSuggestion {
+  id: string;
+  title: string;
+  description: string;
+  angle: string;                  // 차별화 포인트
+  keyPoints: string[];
+  relatedInsights: RelatedInsight[];
+  trendAnalysis?: TrendAnalysis;
+  platforms: Platform[];
+  searchKeywords: string[];
+}
+
+// 글감 히스토리
+export interface TopicHistory {
+  id: string;
+  topics: TopicSuggestion[];
+  insightSummary: string;
+  totalInsightsUsed: number;
+  roomsUsed: string[];
+  generatedAt: string;
+  status: 'generated' | 'in_progress' | 'completed';
 }

@@ -157,6 +157,7 @@ function PlatformCheckCard({ platform, onActivityChange }: PlatformCheckCardProp
 function getPlatformEmoji(platform: Platform): string {
   const emojis: Record<Platform, string> = {
     x: '𝕏',
+    threads: '🧵',
     producthunt: '🚀',
     medium: '📝',
     naver: '🟢',
