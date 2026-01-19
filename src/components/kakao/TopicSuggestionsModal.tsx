@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +15,9 @@ import {
   Save,
   ChevronDown,
   ChevronUp,
+  PenLine,
+  Copy,
+  Check,
 } from 'lucide-react'
 import type { TopicSuggestion } from '@/types'
 
@@ -46,8 +50,10 @@ export function TopicSuggestionsModal({
   insightSummary,
   onSave,
 }: TopicSuggestionsModalProps) {
+  const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null)
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
   if (!isOpen) return null
 
@@ -62,6 +68,29 @@ export function TopicSuggestionsModal({
 
   const toggleExpand = (id: string) => {
     setExpandedTopic(expandedTopic === id ? null : id)
+  }
+
+  // 글쓰기 시작 - compose 페이지로 이동
+  const handleStartWriting = (topic: TopicSuggestion) => {
+    // localStorage에 데이터 저장
+    localStorage.setItem('likethis_compose_topic', JSON.stringify({
+      topic: topic.title,
+      keyPoints: topic.keyPoints.join('\n'),
+      description: topic.description,
+      angle: topic.angle,
+      trendHook: topic.trendAnalysis?.suggestedHook || '',
+    }))
+
+    onClose()
+    router.push('/dashboard/compose')
+  }
+
+  // 핵심 내용 복사
+  const handleCopyKeyPoints = async (topic: TopicSuggestion) => {
+    const text = `주제: ${topic.title}\n\n핵심 내용:\n${topic.keyPoints.join('\n')}\n\n차별화 포인트: ${topic.angle}`
+    await navigator.clipboard.writeText(text)
+    setCopiedId(topic.id)
+    setTimeout(() => setCopiedId(null), 2000)
   }
 
   return (
@@ -125,15 +154,35 @@ export function TopicSuggestionsModal({
 
                 {/* 핵심 포인트 */}
                 <div className="mb-4">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">핵심 포인트</h4>
-                  <ul className="space-y-1">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">핵심 내용 (글쓰기용)</h4>
+                  <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                     {topic.keyPoints.map((point, i) => (
-                      <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                        <span className="text-purple-500">•</span>
+                      <p key={i} className="text-sm text-gray-700">
                         {point}
-                      </li>
+                      </p>
                     ))}
-                  </ul>
+                  </div>
+                </div>
+
+                {/* 액션 버튼 */}
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    onClick={() => handleStartWriting(topic)}
+                    className="flex-1"
+                  >
+                    <PenLine className="w-4 h-4 mr-2" />
+                    이 주제로 글쓰기
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleCopyKeyPoints(topic)}
+                  >
+                    {copiedId === topic.id ? (
+                      <Check className="w-4 h-4 text-green-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
 
                 {/* 트렌드 분석 (Gemini 결과) */}

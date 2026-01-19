@@ -84,6 +84,22 @@ export default function ComposePage() {
     }
   }, [])
 
+  // 글감에서 전달된 데이터 로드
+  useEffect(() => {
+    const topicData = localStorage.getItem('likethis_compose_topic')
+    if (topicData) {
+      try {
+        const parsed = JSON.parse(topicData)
+        if (parsed.topic) setTopic(parsed.topic)
+        if (parsed.keyPoints) setKeyPoints(parsed.keyPoints)
+        // 데이터 사용 후 삭제
+        localStorage.removeItem('likethis_compose_topic')
+      } catch (e) {
+        console.error('Failed to parse topic data:', e)
+      }
+    }
+  }, [])
+
   // 히스토리 불러오기
   const loadHistory = useCallback(async () => {
     if (!user) return
