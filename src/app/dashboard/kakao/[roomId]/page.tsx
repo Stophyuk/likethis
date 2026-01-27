@@ -242,6 +242,16 @@ export default function KakaoRoomPage() {
       // 인사이트 바로 표시 (로그인 여부 무관)
       if (data.insights && data.insights.length > 0) {
         setAllInsights(data.insights as firestore.Insight[])
+
+        // localStorage에도 저장 (콘텐츠 팩토리용)
+        const analysisData = {
+          insights: data.insights,
+          summary: data.summary,
+          roomName: room?.room_name,
+          analyzedAt: new Date().toISOString(),
+        }
+        localStorage.setItem('likethis_latest_kakao_analysis', JSON.stringify(analysisData))
+        localStorage.setItem(`kakao_analysis_${roomId}`, JSON.stringify(analysisData))
       }
 
       // 인사이트 히스토리 저장 (로그인 시에만)

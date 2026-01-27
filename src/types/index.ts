@@ -333,3 +333,73 @@ export interface ComposeTemplate {
   createdAt: string;
   usedCount: number;
 }
+
+// ===== 콘텐츠 팩토리 =====
+
+// 바이브코딩 문서 테마
+export type VibeCodingTheme =
+  | 'intro'      // 바이브코딩 정의, 패러다임 변화
+  | 'benefits'   // 속도 혁명, 인지 확장, 리스크 분산
+  | 'risks'      // 기술 부채, 인지 퇴화, 책임 병목
+  | 'strategy'   // 딥워크, 컨텍스트 엔지니어링, 시스템 사고
+  | 'execution'  // 퍼스널 홀딩 컴퍼니, 바이탈리티 경영
+  | 'conclusion'; // 켄타우로스 모델
+
+// 콘텐츠 블록
+export interface ContentBlock {
+  id: string;
+  theme: VibeCodingTheme;
+  title: string;
+  keyPoints: string[];      // 핵심 포인트 3-5개
+  examples: string[];       // 비유/예시
+  targetKeywords: string[]; // 인사이트 매칭용 키워드
+}
+
+// 타겟 독자 유형
+export type TargetAudience = 'general' | 'developer';
+
+// 콘텐츠 팩토리 플랫폼 (지원하는 플랫폼만)
+export type ContentFactoryPlatform = 'x' | 'linkedin' | 'naver' | 'medium';
+
+// 생성된 글감
+export interface GeneratedArticle {
+  id: string;
+  title: string;
+  hook: string;                     // 도입부
+  sourceInsightIds: string[];       // 사용된 인사이트 ID
+  sourceBlockIds: string[];         // 사용된 문서 블록 ID
+  angle: string;                    // 차별화 앵글
+  platformContents: {
+    platform: ContentFactoryPlatform;
+    content: string;
+    hashtags: string[];
+    characterCount: number;
+  }[];
+  targetAudience: TargetAudience;
+  createdAt: string;
+}
+
+// 글감 생성 요청
+export interface BulkArticleRequest {
+  insights: Array<{
+    id: string;
+    title: string;
+    content: string;
+    tags: string[];
+    sourceQuotes?: string[];
+  }>;
+  selectedBlocks: string[];         // 선택된 블록 ID
+  targetPlatforms: ContentFactoryPlatform[];
+  targetAudience: TargetAudience;
+  articleCount: number;             // 생성할 글감 수
+}
+
+// 글감 생성 결과
+export interface BulkArticleResponse {
+  articles: GeneratedArticle[];
+  meta: {
+    insightsUsed: number;
+    blocksUsed: number;
+    generatedAt: string;
+  };
+}

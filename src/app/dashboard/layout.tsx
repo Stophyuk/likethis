@@ -9,6 +9,7 @@ const navItems = [
   { href: '/dashboard/events', label: '이벤트', icon: '📅' },
   { href: '/dashboard/trends', label: '트렌드', icon: '📊' },
   { href: '/dashboard/kakao', label: '카톡', icon: '💬' },
+  { href: '/dashboard/content-factory', label: '팩토리', icon: '🏭' },
   { href: '/dashboard/compose', label: '작성', icon: '✍️' },
   { href: '/dashboard/comment', label: '댓글', icon: '💭' },
   { href: '/dashboard/guide', label: '가이드', icon: '📚' },
