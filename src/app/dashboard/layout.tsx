@@ -3,17 +3,49 @@ import { Button } from '@/components/ui/button'
 import { logout, getSession } from '@/app/(auth)/actions'
 import { MyPlatformLinks } from '@/components/dashboard/MyPlatformLinks'
 import { SyncProvider } from '@/components/SyncProvider'
+import { NavMenu, MobileNavMenu } from '@/components/dashboard/NavMenu'
 
-const navItems = [
-  { href: '/dashboard', label: '대시보드', icon: '🏠' },
-  { href: '/dashboard/events', label: '이벤트', icon: '📅' },
-  { href: '/dashboard/trends', label: '트렌드', icon: '📊' },
-  { href: '/dashboard/kakao', label: '카톡', icon: '💬' },
-  { href: '/dashboard/content-factory', label: '팩토리', icon: '🏭' },
-  { href: '/dashboard/compose', label: '작성', icon: '✍️' },
-  { href: '/dashboard/comment', label: '댓글', icon: '💭' },
-  { href: '/dashboard/guide', label: '가이드', icon: '📚' },
-  { href: '/dashboard/history', label: '히스토리', icon: '📈' },
+export interface NavItem {
+  href: string
+  label: string
+  icon: string
+  children?: { href: string; label: string }[]
+}
+
+export const navItems: NavItem[] = [
+  { href: '/dashboard', label: '홈', icon: '🏠' },
+  {
+    href: '/dashboard/compose',
+    label: '창작',
+    icon: '✍️',
+    children: [
+      { href: '/dashboard/compose', label: '글쓰기' },
+      { href: '/dashboard/content-factory', label: '팩토리' },
+      { href: '/dashboard/muse', label: 'Muse' },
+    ],
+  },
+  {
+    href: '/dashboard/events',
+    label: '탐색',
+    icon: '🔍',
+    children: [
+      { href: '/dashboard/events', label: '이벤트' },
+      { href: '/dashboard/trends', label: '트렌드' },
+      { href: '/dashboard/kakao', label: '카톡' },
+      { href: '/dashboard/comment', label: '댓글' },
+    ],
+  },
+  {
+    href: '/dashboard/journey',
+    label: '빌드',
+    icon: '🚀',
+    children: [
+      { href: '/dashboard/journey', label: 'Journey' },
+      { href: '/dashboard/ventures', label: 'Ventures' },
+      { href: '/dashboard/guide', label: '가이드' },
+    ],
+  },
+  { href: '/dashboard/history', label: '기록', icon: '📊' },
   { href: '/dashboard/settings', label: '설정', icon: '⚙️' },
 ]
 
@@ -34,18 +66,7 @@ export default async function DashboardLayout({
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <span>{item.icon}</span>
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
+        <NavMenu items={navItems} />
 
         {/* 내 플랫폼 섹션 */}
         <MyPlatformLinks />
@@ -71,17 +92,7 @@ export default async function DashboardLayout({
             <Button variant="ghost" size="sm" type="submit">로그아웃</Button>
           </form>
         </div>
-        <nav className="flex overflow-x-auto px-2 pb-2 gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex-shrink-0 px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
-            >
-              {item.icon} {item.label}
-            </Link>
-          ))}
-        </nav>
+        <MobileNavMenu items={navItems} />
       </div>
 
       {/* 메인 콘텐츠 */}

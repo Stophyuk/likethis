@@ -334,6 +334,157 @@ export interface ComposeTemplate {
   usedCount: number;
 }
 
+// ===== Journey (Deep Work Logger) =====
+
+// Deep Work session category
+export type DeepWorkCategory = 'thinking' | 'creating' | 'reflecting';
+
+// Session mode: pure (no AI) or ai-assisted
+export type DeepWorkMode = 'pure' | 'ai-assisted';
+
+// Deep Work session
+export interface DeepWorkSession {
+  id: string;
+  category: DeepWorkCategory;
+  mode: DeepWorkMode;
+  startedAt: string;
+  endedAt?: string;
+  duration?: number;  // in seconds
+  notes?: string;
+}
+
+// Fail-Fast log entry
+export interface FailFastLog {
+  id: string;
+  whatTried: string;
+  whatFailed: string;
+  whatLearned: string;
+  nextAction: string;
+  createdAt: string;
+  linkedSessionId?: string;  // Optional link to a DeepWorkSession
+}
+
+// Daily reflection
+export interface DailyReflection {
+  id: string;
+  date: string;  // YYYY-MM-DD
+  questions: string[];
+  answers: string[];
+  aiGenerated: boolean;
+  createdAt: string;
+}
+
+// Timer state for localStorage persistence
+export interface TimerState {
+  isRunning: boolean;
+  category: DeepWorkCategory;
+  mode: DeepWorkMode;
+  startedAt: string | null;
+  accumulatedSeconds: number;  // for pause/resume
+}
+
+// Daily journey stats
+export interface JourneyDayStats {
+  date: string;
+  totalPureMinutes: number;
+  totalAiAssistedMinutes: number;
+  sessionCount: number;
+  failLogCount: number;
+  hasReflection: boolean;
+}
+
+// ===== Ventures (Personal Holding Dashboard) =====
+
+// Venture status
+export type VentureStatus = 'idea' | 'building' | 'launched' | 'growing' | 'paused' | 'archived';
+
+// Venture project
+export interface Venture {
+  id: string;
+  name: string;
+  description: string;
+  status: VentureStatus;
+  monopolyContribution: string;  // How this contributes to personal monopoly
+  linkedPostingIds: string[];    // Linked posting history IDs
+  tags: string[];
+  url?: string;                  // Project URL if launched
+  revenue?: number;              // Monthly revenue if applicable
+  startedAt: string;
+  launchedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Personal Monopoly skill category
+export type MonopolySkillCategory =
+  | 'domain'       // Domain expertise
+  | 'technical'    // Technical skills
+  | 'creative'     // Creative/design skills
+  | 'social'       // Community/networking
+  | 'business';    // Business/marketing
+
+// Personal Monopoly skill
+export interface MonopolySkill {
+  id: string;
+  category: MonopolySkillCategory;
+  name: string;
+  level: number;       // 1-10 scale
+  isUnique: boolean;   // Is this a unique/rare skill?
+  notes?: string;
+}
+
+// Personal Monopoly profile
+export interface PersonalMonopoly {
+  skills: MonopolySkill[];
+  uniqueCombination: string;     // Description of unique skill combination
+  targetNiche: string;           // Target market niche
+  gapAnalysis: string[];         // Skills to develop
+  updatedAt: string;
+}
+
+// Incubator idea stage
+export type IdeaStage = 'raw' | 'exploring' | 'structured' | 'ai_feedback' | 'ready' | 'converted';
+
+// Incubator idea
+export interface IncubatorIdea {
+  id: string;
+  rawIdea: string;
+  thinkingDuration: number;      // Seconds spent thinking (min 5min for AI feedback)
+  stage: IdeaStage;
+
+  // Structured prompts (optional, 3+ unlocks early AI feedback)
+  problemStatement?: string;
+  targetAudience?: string;
+  uniqueValue?: string;
+  mvpFeatures?: string;
+  revenueModel?: string;
+  biggestRisk?: string;
+
+  // AI feedback (after timer or prompts)
+  aiFeedback?: {
+    strengths: string[];
+    weaknesses: string[];
+    suggestions: string[];
+    marketInsights?: string;
+    nextSteps: string[];
+    generatedAt: string;
+  };
+
+  // Conversion
+  convertedToVentureId?: string;
+
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Think First timer state
+export interface ThinkFirstState {
+  ideaId: string;
+  startedAt: string;
+  promptsCompleted: number;
+  isUnlocked: boolean;           // AI feedback unlocked
+}
+
 // ===== 콘텐츠 팩토리 =====
 
 // 바이브코딩 문서 테마

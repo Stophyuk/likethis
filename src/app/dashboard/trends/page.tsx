@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, TrendingUp, Sparkles, Trash2, RefreshCw, ExternalLink, ArrowUp, MessageSquare, Newspaper } from 'lucide-react'
+import { Plus, TrendingUp, Sparkles, Trash2, RefreshCw, ExternalLink, ArrowUp, MessageSquare, Newspaper, Lightbulb, Users } from 'lucide-react'
 import type { TrendItem, TrendCollection, TrendSource, NewsTrendItem, NewsTrendPlatform } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
@@ -98,6 +98,22 @@ export default function TrendsPage() {
   const [lastCrawled, setLastCrawled] = useState<string>('')
   const [platformFilter, setPlatformFilter] = useState<NewsTrendPlatform | 'all'>('all')
 
+  // 기회 해석 상태
+  const [translating, setTranslating] = useState(false)
+  const [opportunityData, setOpportunityData] = useState<{
+    summary: string
+    opportunities: Array<{
+      title: string
+      forWhom: string
+      description: string
+      actionItems: string[]
+      difficulty: 'easy' | 'medium' | 'hard'
+      timeframe: string
+    }>
+    glossary: Array<{ term: string; simple: string }>
+    contentIdeas: Array<{ topic: string; angle: string; targetAudience: string }>
+  } | null>(null)
+
   useEffect(() => {
     const saved = loadTrends()
     if (saved) {
@@ -155,6 +171,25 @@ export default function TrendsPage() {
       console.error('Crawl failed:', error)
     } finally {
       setCrawling(false)
+    }
+  }
+
+  const handleTranslateOpportunity = async () => {
+    if (filteredNews.length === 0) return
+
+    setTranslating(true)
+    try {
+      const res = await fetch('/api/translate-opportunity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: filteredNews }),
+      })
+      const data = await res.json()
+      setOpportunityData(data)
+    } catch (error) {
+      console.error('Translation failed:', error)
+    } finally {
+      setTranslating(false)
     }
   }
 
@@ -294,14 +329,28 @@ export default function TrendsPage() {
                 )
               })}
             </div>
-            <Button onClick={handleCrawlTrends} disabled={crawling}>
-              {crawling ? (
-                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4 mr-2" />
-              )}
-              {crawling ? '수집 중...' : '새로고침'}
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleTranslateOpportunity}
+                disabled={translating || filteredNews.length === 0}
+              >
+                {translating ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                )}
+                {translating ? '분석 중...' : '기회 해석'}
+              </Button>
+              <Button onClick={handleCrawlTrends} disabled={crawling}>
+                {crawling ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                {crawling ? '수집 중...' : '새로고침'}
+              </Button>
+            </div>
           </div>
 
           {lastCrawled && (
@@ -376,6 +425,110 @@ export default function TrendsPage() {
                 <p className="text-sm mt-1">새로고침 버튼을 눌러 최신 트렌드를 수집하세요.</p>
               </CardContent>
             </Card>
+          )}
+
+          {/* 기회 해석 결과 */}
+          {opportunityData && (
+            <div className="space-y-4 mt-6 pt-6 border-t">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-500" />
+                비개발자를 위한 기회 해석
+              </h2>
+
+              {/* 요약 */}
+              <Card className="bg-amber-50 border-amber-200">
+                <CardContent className="py-4">
+                  <p className="text-gray-800">{opportunityData.summary}</p>
+                </CardContent>
+              </Card>
+
+              {/* 기회 목록 */}
+              {opportunityData.opportunities?.length > 0 && (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {opportunityData.opportunities.map((opp, i) => (
+                    <Card key={i}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <CardTitle className="text-base">{opp.title}</CardTitle>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            opp.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                            opp.difficulty === 'medium' ? 'bg-amber-100 text-amber-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {opp.difficulty === 'easy' ? '쉬움' : opp.difficulty === 'medium' ? '보통' : '어려움'}
+                          </span>
+                        </div>
+                        <CardDescription className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {opp.forWhom}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <p className="text-sm text-gray-700">{opp.description}</p>
+                        <div>
+                          <h4 className="text-xs font-medium text-gray-500 mb-1">실행 항목</h4>
+                          <ul className="space-y-1">
+                            {opp.actionItems.map((item, j) => (
+                              <li key={j} className="text-sm text-gray-600 flex items-start gap-1">
+                                <span className="text-green-500">→</span>
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          소요 시간: {opp.timeframe}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* 용어 사전 */}
+              {opportunityData.glossary?.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">용어 사전</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {opportunityData.glossary.map((item, i) => (
+                        <div key={i} className="p-2 bg-gray-50 rounded text-sm">
+                          <span className="font-medium text-purple-600">{item.term}</span>
+                          <span className="text-gray-500 mx-1">=</span>
+                          <span className="text-gray-700">{item.simple}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 콘텐츠 아이디어 */}
+              {opportunityData.contentIdeas?.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">콘텐츠 아이디어</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {opportunityData.contentIdeas.map((idea, i) => (
+                        <div key={i} className="p-3 bg-blue-50 rounded-lg">
+                          <p className="font-medium text-sm">{idea.topic}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            <span className="text-blue-600">앵글:</span> {idea.angle}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            타겟: {idea.targetAudience}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
         </div>
       )}

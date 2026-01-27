@@ -6,6 +6,7 @@ import { TodayChecklist } from '@/components/dashboard/TodayChecklist'
 import { PlatformProgress } from '@/components/dashboard/PlatformProgress'
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar'
 import { AttentionAlert } from '@/components/dashboard/AttentionAlert'
+import { CentaurScore } from '@/components/dashboard/CentaurScore'
 
 export default function DashboardPage() {
   // 체크리스트 변경 시 스트릭 카운터 갱신을 위한 트리거
@@ -26,8 +27,9 @@ export default function DashboardPage() {
 
       <AttentionAlert />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StreakCounter refreshTrigger={refreshTrigger} />
+        <CentaurScore refreshTrigger={refreshTrigger} />
         <ActivityCalendar />
       </div>
 

@@ -18,10 +18,11 @@ import {
   saveComposeTemplate,
   getComposeTemplates,
   deleteComposeTemplate,
-  incrementTemplateUsage
+  incrementTemplateUsage,
+  getVentures,
 } from '@/lib/firebase/firestore'
 import Link from 'next/link'
-import type { Platform, PlatformContent, PostingHistory, ComposeTemplate } from '@/types'
+import type { Platform, PlatformContent, PostingHistory, ComposeTemplate, Venture } from '@/types'
 
 interface TransformResult {
   transformed_content: string
@@ -75,6 +76,11 @@ export default function ComposePage() {
   const [templateName, setTemplateName] = useState('')
   const [loadingData, setLoadingData] = useState(false)
 
+  // Philosophy Mode & Venture
+  const [philosophyMode, setPhilosophyMode] = useState(false)
+  const [ventures, setVentures] = useState<Venture[]>([])
+  const [selectedVentureId, setSelectedVentureId] = useState<string>('')
+
   // 관심사 로드
   const [interests, setInterests] = useState<string[]>([])
   useEffect(() => {
@@ -83,6 +89,20 @@ export default function ComposePage() {
       setInterests(JSON.parse(saved))
     }
   }, [])
+
+  // Ventures 로드
+  useEffect(() => {
+    async function loadVentures() {
+      if (!user) return
+      try {
+        const ventureList = await getVentures(user.uid)
+        setVentures(ventureList.filter(v => v.status !== 'archived'))
+      } catch (error) {
+        console.error('Failed to load ventures:', error)
+      }
+    }
+    loadVentures()
+  }, [user])
 
   // 글감에서 전달된 데이터 로드
   useEffect(() => {
@@ -229,6 +249,12 @@ export default function ComposePage() {
 
     setDraftLoading(true)
     try {
+      // Find selected venture for context
+      const selectedVenture = ventures.find(v => v.id === selectedVentureId)
+      const ventureContext = selectedVenture
+        ? `This content is for the venture "${selectedVenture.name}": ${selectedVenture.description}. Monopoly contribution: ${selectedVenture.monopolyContribution}`
+        : undefined
+
       const response = await fetch('/api/generate-draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -237,6 +263,8 @@ export default function ComposePage() {
           keyPoints,
           interests,
           bilingual,
+          philosophyMode,
+          ventureContext,
         }),
       })
 
@@ -524,19 +552,52 @@ export default function ComposePage() {
                 rows={6}
               />
             </div>
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="bilingual"
-                checked={bilingual}
-                onCheckedChange={(checked) => setBilingual(checked === true)}
-              />
-              <label
-                htmlFor="bilingual"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-              >
-                한/영 동시 생성
-              </label>
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="bilingual"
+                  checked={bilingual}
+                  onCheckedChange={(checked) => setBilingual(checked === true)}
+                />
+                <label
+                  htmlFor="bilingual"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  한/영 동시 생성
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="philosophyMode"
+                  checked={philosophyMode}
+                  onCheckedChange={(checked) => setPhilosophyMode(checked === true)}
+                />
+                <label
+                  htmlFor="philosophyMode"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Philosophy Mode
+                </label>
+                <span className="text-xs text-gray-400">(철학적 맥락 주입)</span>
+              </div>
             </div>
+            {ventures.length > 0 && (
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-1 block">연결할 Venture (선택)</label>
+                <select
+                  value={selectedVentureId}
+                  onChange={(e) => setSelectedVentureId(e.target.value)}
+                  className="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                >
+                  <option value="">선택 안함</option>
+                  {ventures.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.name} ({v.status === 'idea' ? '아이디어' : v.status === 'building' ? '빌딩 중' : v.status === 'launched' ? '런칭됨' : '성장 중'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="flex gap-2 flex-wrap">
               <Button
                 onClick={handleGenerateDraft}

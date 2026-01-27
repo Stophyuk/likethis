@@ -1,6 +1,6 @@
 import { db } from './config'
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
-import type { TrendCollection, TrendItem, EventItem, NewsTrendItem } from '@/types'
+import type { TrendCollection, TrendItem, EventItem, NewsTrendItem, DeepWorkSession, FailFastLog, DailyReflection, JourneyDayStats, Venture, PersonalMonopoly, IncubatorIdea } from '@/types'
 
 // ===== 설정 =====
 export async function saveUserSettings(uid: string, settings: {
@@ -612,4 +612,259 @@ export async function incrementTemplateUsage(uid: string, id: string): Promise<v
     const data = snap.data() as ComposeTemplate
     await setDoc(ref, { usedCount: (data.usedCount || 0) + 1 }, { merge: true })
   }
+}
+
+// ===== Journey (Deep Work Logger) =====
+
+// Save deep work session
+export async function saveDeepWorkSession(uid: string, session: DeepWorkSession): Promise<string> {
+  const ref = doc(db, 'users', uid, 'journey/sessions', session.id)
+  await setDoc(ref, session)
+  return session.id
+}
+
+// Get deep work sessions by date
+export async function getDeepWorkSessions(uid: string, date: string): Promise<DeepWorkSession[]> {
+  const ref = collection(db, 'users', uid, 'journey/sessions')
+  const snap = await getDocs(ref)
+  return snap.docs
+    .map(d => d.data() as DeepWorkSession)
+    .filter(s => s.startedAt.startsWith(date))
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+}
+
+// Get all deep work sessions (with limit)
+export async function getAllDeepWorkSessions(uid: string, limitCount: number = 100): Promise<DeepWorkSession[]> {
+  const ref = collection(db, 'users', uid, 'journey/sessions')
+  const q = query(ref, orderBy('startedAt', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => d.data() as DeepWorkSession)
+}
+
+// Save fail-fast log
+export async function saveFailFastLog(uid: string, log: FailFastLog): Promise<string> {
+  const ref = doc(db, 'users', uid, 'journey/fails', log.id)
+  await setDoc(ref, log)
+  return log.id
+}
+
+// Get fail-fast logs
+export async function getFailFastLogs(uid: string, limitCount: number = 50): Promise<FailFastLog[]> {
+  const ref = collection(db, 'users', uid, 'journey/fails')
+  const q = query(ref, orderBy('createdAt', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => d.data() as FailFastLog)
+}
+
+// Get fail-fast logs by date
+export async function getFailFastLogsByDate(uid: string, date: string): Promise<FailFastLog[]> {
+  const ref = collection(db, 'users', uid, 'journey/fails')
+  const snap = await getDocs(ref)
+  return snap.docs
+    .map(d => d.data() as FailFastLog)
+    .filter(l => l.createdAt.startsWith(date))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+}
+
+// Save daily reflection
+export async function saveDailyReflection(uid: string, reflection: DailyReflection): Promise<string> {
+  const ref = doc(db, 'users', uid, 'journey/reflections', reflection.date)
+  await setDoc(ref, reflection)
+  return reflection.id
+}
+
+// Get daily reflection
+export async function getDailyReflection(uid: string, date: string): Promise<DailyReflection | null> {
+  const ref = doc(db, 'users', uid, 'journey/reflections', date)
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() as DailyReflection : null
+}
+
+// Get journey day stats
+export async function getJourneyDayStats(uid: string, date: string): Promise<JourneyDayStats> {
+  const [sessions, failLogs, reflection] = await Promise.all([
+    getDeepWorkSessions(uid, date),
+    getFailFastLogsByDate(uid, date),
+    getDailyReflection(uid, date),
+  ])
+
+  let totalPureMinutes = 0
+  let totalAiAssistedMinutes = 0
+
+  for (const session of sessions) {
+    if (session.duration) {
+      const minutes = Math.round(session.duration / 60)
+      if (session.mode === 'pure') {
+        totalPureMinutes += minutes
+      } else {
+        totalAiAssistedMinutes += minutes
+      }
+    }
+  }
+
+  return {
+    date,
+    totalPureMinutes,
+    totalAiAssistedMinutes,
+    sessionCount: sessions.length,
+    failLogCount: failLogs.length,
+    hasReflection: !!reflection,
+  }
+}
+
+// Get journey stats for date range
+export async function getJourneyStatsRange(
+  uid: string,
+  startDate: string,
+  endDate: string
+): Promise<JourneyDayStats[]> {
+  const stats: JourneyDayStats[] = []
+  const start = new Date(startDate)
+  const end = new Date(endDate)
+
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0]
+    const dayStat = await getJourneyDayStats(uid, dateStr)
+    if (dayStat.sessionCount > 0 || dayStat.failLogCount > 0 || dayStat.hasReflection) {
+      stats.push(dayStat)
+    }
+  }
+
+  return stats
+}
+
+// ===== Ventures (Personal Holding Dashboard) =====
+
+// Save venture
+export async function saveVenture(uid: string, venture: Venture): Promise<string> {
+  const ref = doc(db, 'users', uid, 'ventures', venture.id)
+  await setDoc(ref, {
+    ...venture,
+    updatedAt: new Date().toISOString(),
+  })
+  return venture.id
+}
+
+// Get venture by ID
+export async function getVenture(uid: string, id: string): Promise<Venture | null> {
+  const ref = doc(db, 'users', uid, 'ventures', id)
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() as Venture : null
+}
+
+// Get all ventures
+export async function getVentures(uid: string): Promise<Venture[]> {
+  const ref = collection(db, 'users', uid, 'ventures')
+  const q = query(ref, orderBy('createdAt', 'desc'))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => d.data() as Venture)
+    .filter(v => v.status !== 'archived')
+}
+
+// Get ventures by status
+export async function getVenturesByStatus(uid: string, status: Venture['status']): Promise<Venture[]> {
+  const ventures = await getVentures(uid)
+  return ventures.filter(v => v.status === status)
+}
+
+// Delete venture (archive it)
+export async function archiveVenture(uid: string, id: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'ventures', id)
+  await setDoc(ref, {
+    status: 'archived',
+    updatedAt: new Date().toISOString(),
+  }, { merge: true })
+}
+
+// Save personal monopoly
+export async function savePersonalMonopoly(uid: string, monopoly: PersonalMonopoly): Promise<void> {
+  const ref = doc(db, 'users', uid, 'data', 'personalMonopoly')
+  await setDoc(ref, {
+    ...monopoly,
+    updatedAt: new Date().toISOString(),
+  })
+}
+
+// Get personal monopoly
+export async function getPersonalMonopoly(uid: string): Promise<PersonalMonopoly | null> {
+  const ref = doc(db, 'users', uid, 'data', 'personalMonopoly')
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() as PersonalMonopoly : null
+}
+
+// Save incubator idea
+export async function saveIncubatorIdea(uid: string, idea: IncubatorIdea): Promise<string> {
+  const ref = doc(db, 'users', uid, 'incubator', idea.id)
+  await setDoc(ref, {
+    ...idea,
+    updatedAt: new Date().toISOString(),
+  })
+  return idea.id
+}
+
+// Get incubator idea
+export async function getIncubatorIdea(uid: string, id: string): Promise<IncubatorIdea | null> {
+  const ref = doc(db, 'users', uid, 'incubator', id)
+  const snap = await getDoc(ref)
+  return snap.exists() ? snap.data() as IncubatorIdea : null
+}
+
+// Get all incubator ideas
+export async function getIncubatorIdeas(uid: string): Promise<IncubatorIdea[]> {
+  const ref = collection(db, 'users', uid, 'incubator')
+  const q = query(ref, orderBy('createdAt', 'desc'))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => d.data() as IncubatorIdea)
+    .filter(i => i.stage !== 'converted')
+}
+
+// Convert idea to venture
+export async function convertIdeaToVenture(
+  uid: string,
+  ideaId: string,
+  ventureName: string,
+  description: string
+): Promise<string> {
+  const idea = await getIncubatorIdea(uid, ideaId)
+  if (!idea) {
+    throw new Error('Idea not found')
+  }
+
+  // Create venture from idea
+  const ventureId = `venture_${Date.now()}`
+  const venture: Venture = {
+    id: ventureId,
+    name: ventureName,
+    description,
+    status: 'idea',
+    monopolyContribution: idea.uniqueValue || '',
+    linkedPostingIds: [],
+    tags: [],
+    startedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+
+  // Save venture
+  await saveVenture(uid, venture)
+
+  // Update idea status
+  await setDoc(doc(db, 'users', uid, 'incubator', ideaId), {
+    stage: 'converted',
+    convertedToVentureId: ventureId,
+    updatedAt: new Date().toISOString(),
+  }, { merge: true })
+
+  return ventureId
+}
+
+// Delete incubator idea
+export async function deleteIncubatorIdea(uid: string, id: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'incubator', id)
+  await setDoc(ref, {
+    stage: 'converted',  // Mark as converted to hide it
+    updatedAt: new Date().toISOString(),
+  }, { merge: true })
 }

@@ -19,6 +19,8 @@ const LOCAL_KEYS = {
   profileUrls: 'likethis_profile_urls',
   kakaoRooms: 'likethis_kakao_rooms',
   events: 'likethis_events',
+  journeyTimerState: 'likethis_journey_timer_state',
+  journeyFails: 'likethis_journey_fails',
 }
 
 export function useSync() {
@@ -74,6 +76,34 @@ export function useSync() {
         const data = localStorage.getItem(key)
         if (data) {
           await firestore.saveActivity(user.uid, dateStr, JSON.parse(data))
+        }
+      }
+
+      // Journey 세션 동기화 (최근 7일 localStorage에서 -> Firestore)
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today)
+        date.setDate(today.getDate() - i)
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+        const key = `likethis_journey_sessions_${dateStr}`
+        const data = localStorage.getItem(key)
+        if (data) {
+          const sessions = JSON.parse(data)
+          for (const session of sessions) {
+            if (session.id && session.endedAt) {
+              await firestore.saveDeepWorkSession(user.uid, session)
+            }
+          }
+        }
+      }
+
+      // Journey Fail logs 동기화
+      const failLogs = localStorage.getItem(LOCAL_KEYS.journeyFails)
+      if (failLogs) {
+        const logs = JSON.parse(failLogs)
+        for (const log of logs) {
+          if (log.id) {
+            await firestore.saveFailFastLog(user.uid, log)
+          }
         }
       }
 
@@ -195,6 +225,48 @@ export function useSync() {
     }
   }, [user])
 
+  // Journey 즉시 동기화
+  const syncJourneyNow = useCallback(async () => {
+    if (!user) return
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      return
+    }
+
+    try {
+      const today = new Date()
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+      const key = `likethis_journey_sessions_${dateStr}`
+      const data = localStorage.getItem(key)
+
+      if (data) {
+        const sessions = JSON.parse(data)
+        for (const session of sessions) {
+          if (session.id && session.endedAt) {
+            await firestore.saveDeepWorkSession(user.uid, session)
+          }
+        }
+        console.log('Journey sessions synced immediately')
+      }
+
+      // Fail logs
+      const failLogs = localStorage.getItem(LOCAL_KEYS.journeyFails)
+      if (failLogs) {
+        const logs = JSON.parse(failLogs)
+        for (const log of logs) {
+          if (log.id) {
+            await firestore.saveFailFastLog(user.uid, log)
+          }
+        }
+        console.log('Journey fail logs synced immediately')
+      }
+    } catch (error) {
+      if (!isOfflineError(error)) {
+        console.error('Journey sync failed:', error)
+      }
+    }
+  }, [user])
+
   // 로그인 시 클라우드에서 데이터 가져오기
   useEffect(() => {
     if (user) {
@@ -202,5 +274,5 @@ export function useSync() {
     }
   }, [user, syncFromCloud])
 
-  return { syncToCloud, syncFromCloud, syncKakaoRoomsNow, syncEventsNow }
+  return { syncToCloud, syncFromCloud, syncKakaoRoomsNow, syncEventsNow, syncJourneyNow }
 }
