@@ -95,7 +95,7 @@ async function extractChunkInsights(messages: ChatMessage[], chunkIndex: number,
   const chatContent = messages
     .map(m => m.message)
     .join('\n')
-    .substring(0, 20000)
+    .substring(0, 50000)  // Increased for larger chunks
 
   const prompt = `IT/개발자 커뮤니티 대화에서 **유용한 지식과 트렌드**를 추출하세요.
 (청크 ${chunkIndex + 1}/${totalChunks})
@@ -334,23 +334,24 @@ ${chatText.substring(0, 25000)}`
       })
 
     } else {
-      // 500개 초과: 전체 청크 분석 (샘플링 없음)
-      const CHUNK_SIZE = 400
-      const chunks: ChatMessage[][] = []
+      // 500개 초과: 전체 청크 분석 (대용량 최적화)
+      // 메시지 수에 따라 청크 크기 동적 조정
+      const CHUNK_SIZE = totalCount > 20000 ? 1500 : totalCount > 5000 ? 1000 : 600
+      const BATCH_SIZE = totalCount > 20000 ? 5 : totalCount > 5000 ? 4 : 3
 
+      const chunks: ChatMessage[][] = []
       for (let i = 0; i < chatMessages.length; i += CHUNK_SIZE) {
         chunks.push(chatMessages.slice(i, i + CHUNK_SIZE))
       }
 
-      console.log(`[OpenAI] Processing ALL ${chunks.length} chunks (no sampling)...`)
+      console.log(`[OpenAI] Processing ${chunks.length} chunks (size=${CHUNK_SIZE}, parallel=${BATCH_SIZE})...`)
 
-      // 병렬 배치 처리 (3개씩 동시에, rate limit 방지)
-      const BATCH_SIZE = 3
+      // 병렬 배치 처리
       const chunkInsights: ChunkInsights[] = []
 
       for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
         const batch = chunks.slice(i, i + BATCH_SIZE)
-        console.log(`[OpenAI] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)} (chunks ${i + 1}-${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length})...`)
+        console.log(`[OpenAI] Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)} (chunks ${i + 1}-${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length})`)
 
         // 배치 내 병렬 처리
         const batchResults = await Promise.all(
@@ -362,7 +363,7 @@ ${chatText.substring(0, 25000)}`
 
         // 배치 간 딜레이 (rate limit 방지)
         if (i + BATCH_SIZE < chunks.length) {
-          await new Promise(resolve => setTimeout(resolve, 300))
+          await new Promise(resolve => setTimeout(resolve, 200))
         }
       }
 

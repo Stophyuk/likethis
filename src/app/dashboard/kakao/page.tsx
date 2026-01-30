@@ -222,66 +222,70 @@ export default function KakaoInsightPage() {
     e.target.value = ''
   }, [handleFilesUpload])
 
-  // Run analysis - parallel processing with preprocessing
+  // Run analysis - chunked upload for large files
   const handleAnalyze = async () => {
     const filesToAnalyze = uploadedFiles.filter(f => f.status === 'done' && f.messages.length > 0)
     if (filesToAnalyze.length === 0) return
 
     setAnalyzing(true)
     try {
-      // Preprocess and prepare all files
-      const analysisJobs = filesToAnalyze.map(fileState => {
-        // Apply preprocessing filter
-        const filteredMessages = filterForAnalysis(fileState.messages)
-        const filterRate = Math.round((1 - filteredMessages.length / fileState.messages.length) * 100)
-        console.log(`[${fileState.roomName}] Filtered: ${fileState.messages.length} → ${filteredMessages.length} (${filterRate}% removed)`)
-
-        return {
-          roomName: fileState.roomName,
-          messages: filteredMessages,
-          originalCount: fileState.messages.length,
-        }
-      })
-
-      // Process files in parallel (max 3 concurrent)
-      const PARALLEL_LIMIT = 3
       const allNewInsights: InsightItem[] = []
       let lastResult: AnalysisResult | null = null
 
-      for (let i = 0; i < analysisJobs.length; i += PARALLEL_LIMIT) {
-        const batch = analysisJobs.slice(i, i + PARALLEL_LIMIT)
-        console.log(`Processing batch ${Math.floor(i / PARALLEL_LIMIT) + 1}/${Math.ceil(analysisJobs.length / PARALLEL_LIMIT)}...`)
+      // Process each file
+      for (const fileState of filesToAnalyze) {
+        const filteredMessages = filterForAnalysis(fileState.messages)
+        console.log(`[${fileState.roomName}] Filtered: ${fileState.messages.length} → ${filteredMessages.length}`)
 
-        const batchResults = await Promise.all(
-          batch.map(async (job) => {
-            if (job.messages.length === 0) {
-              return { roomName: job.roomName, data: null }
-            }
+        if (filteredMessages.length === 0) continue
 
-            const res = await fetch('/api/summarize-chat', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                messages: job.messages,
-                roomName: job.roomName
-              })
+        // Split large message sets into chunks for upload (10,000 messages per request max)
+        const UPLOAD_CHUNK_SIZE = 10000
+        const uploadChunks: ChatMessage[][] = []
+        for (let i = 0; i < filteredMessages.length; i += UPLOAD_CHUNK_SIZE) {
+          uploadChunks.push(filteredMessages.slice(i, i + UPLOAD_CHUNK_SIZE))
+        }
+
+        console.log(`[${fileState.roomName}] Split into ${uploadChunks.length} upload chunks`)
+
+        // Process each upload chunk
+        for (let chunkIdx = 0; chunkIdx < uploadChunks.length; chunkIdx++) {
+          const chunk = uploadChunks[chunkIdx]
+          const chunkName = uploadChunks.length > 1
+            ? `${fileState.roomName} (${chunkIdx + 1}/${uploadChunks.length})`
+            : fileState.roomName
+
+          console.log(`[${chunkName}] Sending ${chunk.length} messages...`)
+
+          const res = await fetch('/api/summarize-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: chunk,
+              roomName: fileState.roomName
             })
-            const data = await res.json() as AnalysisResult
-            return { roomName: job.roomName, data }
           })
-        )
 
-        // Collect results
-        for (const { roomName, data } of batchResults) {
-          if (data) {
-            lastResult = data
-            if (data.insights && data.insights.length > 0) {
-              const insightsWithRoom = data.insights.map(insight => ({
-                ...insight,
-                roomName
-              }))
-              allNewInsights.push(...insightsWithRoom)
-            }
+          if (!res.ok) {
+            console.error(`[${chunkName}] API error: ${res.status}`)
+            continue
+          }
+
+          const data = await res.json() as AnalysisResult
+          lastResult = data
+
+          if (data.insights && data.insights.length > 0) {
+            const insightsWithRoom = data.insights.map(insight => ({
+              ...insight,
+              roomName: fileState.roomName
+            }))
+            allNewInsights.push(...insightsWithRoom)
+            console.log(`[${chunkName}] Got ${data.insights.length} insights`)
+          }
+
+          // Small delay between chunks
+          if (chunkIdx < uploadChunks.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 500))
           }
         }
       }
@@ -289,9 +293,20 @@ export default function KakaoInsightPage() {
       setResult(lastResult)
 
       if (allNewInsights.length > 0) {
-        // Merge with existing insights (deduplicate by title + roomName)
+        // Deduplicate by title + roomName
+        const uniqueNewInsights: InsightItem[] = []
+        const seenKeys = new Set<string>()
+        for (const insight of allNewInsights) {
+          const key = `${insight.roomName}:${insight.title}`
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key)
+            uniqueNewInsights.push(insight)
+          }
+        }
+
+        // Merge with existing insights
         const existingKeys = new Set(allInsights.map(i => `${i.roomName}:${i.title}`))
-        const newInsights = allNewInsights.filter(i => !existingKeys.has(`${i.roomName}:${i.title}`))
+        const newInsights = uniqueNewInsights.filter(i => !existingKeys.has(`${i.roomName}:${i.title}`))
         const merged = [...newInsights, ...allInsights]
         setAllInsights(merged)
 
@@ -308,6 +323,8 @@ export default function KakaoInsightPage() {
           summary: lastResult?.summary || '',
           analyzedAt: new Date().toISOString(),
         }))
+
+        console.log(`Total: ${uniqueNewInsights.length} new insights, ${merged.length} total`)
       }
 
       // Clear uploaded files after analysis
