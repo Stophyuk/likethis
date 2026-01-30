@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 
-// Vercel 함수 타임아웃 설정 (최대 60초)
-export const maxDuration = 60
+// 함수 타임아웃 설정 (Railway: 무제한, Vercel Pro: 300초)
+export const maxDuration = 300
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -334,7 +334,7 @@ ${chatText.substring(0, 25000)}`
       })
 
     } else {
-      // 500개 초과: 청크 분석
+      // 500개 초과: 전체 청크 분석 (샘플링 없음)
       const CHUNK_SIZE = 400
       const chunks: ChatMessage[][] = []
 
@@ -342,31 +342,27 @@ ${chatText.substring(0, 25000)}`
         chunks.push(chatMessages.slice(i, i + CHUNK_SIZE))
       }
 
-      console.log(`[OpenAI] Processing ${chunks.length} chunks...`)
+      console.log(`[OpenAI] Processing ALL ${chunks.length} chunks (no sampling)...`)
 
-      // 최대 8개 청크 균등 샘플링
-      let chunksToAnalyze: ChatMessage[][]
-      if (chunks.length <= 8) {
-        chunksToAnalyze = chunks
-      } else {
-        const step = Math.floor(chunks.length / 8)
-        chunksToAnalyze = []
-        for (let i = 0; i < 8; i++) {
-          chunksToAnalyze.push(chunks[Math.min(i * step, chunks.length - 1)])
-        }
-      }
-
-      console.log(`[OpenAI] Analyzing ${chunksToAnalyze.length} chunks out of ${chunks.length}...`)
-
-      // 순차 처리 (rate limit 방지)
+      // 병렬 배치 처리 (3개씩 동시에, rate limit 방지)
+      const BATCH_SIZE = 3
       const chunkInsights: ChunkInsights[] = []
-      for (let i = 0; i < chunksToAnalyze.length; i++) {
-        console.log(`[OpenAI] Processing chunk ${i + 1}/${chunksToAnalyze.length}...`)
-        const result = await extractChunkInsights(chunksToAnalyze[i], i, chunksToAnalyze.length)
-        chunkInsights.push(result)
 
-        if (i < chunksToAnalyze.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 500))
+      for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+        const batch = chunks.slice(i, i + BATCH_SIZE)
+        console.log(`[OpenAI] Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(chunks.length / BATCH_SIZE)} (chunks ${i + 1}-${Math.min(i + BATCH_SIZE, chunks.length)}/${chunks.length})...`)
+
+        // 배치 내 병렬 처리
+        const batchResults = await Promise.all(
+          batch.map((chunk, idx) =>
+            extractChunkInsights(chunk, i + idx, chunks.length)
+          )
+        )
+        chunkInsights.push(...batchResults)
+
+        // 배치 간 딜레이 (rate limit 방지)
+        if (i + BATCH_SIZE < chunks.length) {
+          await new Promise(resolve => setTimeout(resolve, 300))
         }
       }
 
@@ -381,8 +377,8 @@ ${chatText.substring(0, 25000)}`
         _meta: {
           ...((result._meta as object) || {}),
           totalChunks: chunks.length,
-          chunksAnalyzed: chunksToAnalyze.length,
-          analysisMethod: 'chunked',
+          chunksAnalyzed: chunks.length,
+          analysisMethod: 'chunked-full',
           model: 'gpt-4o-mini'
         }
       })

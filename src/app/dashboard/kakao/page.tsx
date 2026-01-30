@@ -9,12 +9,30 @@ import {
   CheckCircle2, XCircle, File, PenTool, Rocket, GraduationCap,
   Users, Sparkles, ChevronRight, History
 } from 'lucide-react'
-import { parseKakaoCsv, ChatMessage } from '@/lib/csv-parser'
+import { parseKakaoCsv, filterForAnalysis, ChatMessage } from '@/lib/csv-parser'
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
 import type { TopicSuggestion } from '@/types'
 import { TopicSuggestionsModal } from '@/components/kakao/TopicSuggestionsModal'
 import Link from 'next/link'
+
+// Parse room name from Kakao CSV filename
+// Format: KakaoTalk_Chat_[roomName]_[datetime] or KakaoTalkChats_[roomName].csv
+function parseRoomNameFromFilename(filename: string): string {
+  // Remove extension
+  const name = filename.replace(/\.(csv|txt)$/i, '')
+
+  // Try format: KakaoTalk_Chat_[roomName]_[datetime]
+  const chatMatch = name.match(/^KakaoTalk_Chat_(.+?)_\d{4}-\d{2}-\d{2}/)
+  if (chatMatch) return chatMatch[1]
+
+  // Try format: KakaoTalkChats_[roomName]
+  const chatsMatch = name.match(/^KakaoTalkChats_(.+)$/)
+  if (chatsMatch) return chatsMatch[1]
+
+  // Fallback: use filename without extension
+  return name
+}
 
 // Insight types
 interface InsightItem {
@@ -24,6 +42,7 @@ interface InsightItem {
   tags: string[]
   sourceQuotes?: string[]
   extractedAt?: string
+  roomName?: string
 }
 
 interface ActionableItem {
@@ -51,6 +70,7 @@ interface FileUploadState {
   file: File
   status: 'pending' | 'parsing' | 'done' | 'error'
   messages: ChatMessage[]
+  roomName: string
   error?: string
 }
 
@@ -69,6 +89,7 @@ export default function KakaoInsightPage() {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [allInsights, setAllInsights] = useState<InsightItem[]>([])
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [roomFilter, setRoomFilter] = useState<string>('all')
   const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
 
   // AI 글감 states
@@ -131,7 +152,8 @@ export default function KakaoInsightPage() {
     const initialStates: FileUploadState[] = validFiles.map(file => ({
       file,
       status: 'pending',
-      messages: []
+      messages: [],
+      roomName: parseRoomNameFromFilename(file.name)
     }))
     setUploadedFiles(prev => [...prev, ...initialStates])
     setResult(null)
@@ -200,41 +222,90 @@ export default function KakaoInsightPage() {
     e.target.value = ''
   }, [handleFilesUpload])
 
-  // Run analysis
+  // Run analysis - parallel processing with preprocessing
   const handleAnalyze = async () => {
-    if (newMessages.length === 0) return
+    const filesToAnalyze = uploadedFiles.filter(f => f.status === 'done' && f.messages.length > 0)
+    if (filesToAnalyze.length === 0) return
 
     setAnalyzing(true)
     try {
-      const res = await fetch('/api/summarize-chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: newMessages,
-          roomName: '카카오톡 대화'
-        })
-      })
-      const data = await res.json() as AnalysisResult
-      setResult(data)
+      // Preprocess and prepare all files
+      const analysisJobs = filesToAnalyze.map(fileState => {
+        // Apply preprocessing filter
+        const filteredMessages = filterForAnalysis(fileState.messages)
+        const filterRate = Math.round((1 - filteredMessages.length / fileState.messages.length) * 100)
+        console.log(`[${fileState.roomName}] Filtered: ${fileState.messages.length} → ${filteredMessages.length} (${filterRate}% removed)`)
 
-      if (data.insights && data.insights.length > 0) {
-        // Merge with existing insights (deduplicate by title)
-        const existingTitles = new Set(allInsights.map(i => i.title))
-        const newInsights = data.insights.filter(i => !existingTitles.has(i.title))
+        return {
+          roomName: fileState.roomName,
+          messages: filteredMessages,
+          originalCount: fileState.messages.length,
+        }
+      })
+
+      // Process files in parallel (max 3 concurrent)
+      const PARALLEL_LIMIT = 3
+      const allNewInsights: InsightItem[] = []
+      let lastResult: AnalysisResult | null = null
+
+      for (let i = 0; i < analysisJobs.length; i += PARALLEL_LIMIT) {
+        const batch = analysisJobs.slice(i, i + PARALLEL_LIMIT)
+        console.log(`Processing batch ${Math.floor(i / PARALLEL_LIMIT) + 1}/${Math.ceil(analysisJobs.length / PARALLEL_LIMIT)}...`)
+
+        const batchResults = await Promise.all(
+          batch.map(async (job) => {
+            if (job.messages.length === 0) {
+              return { roomName: job.roomName, data: null }
+            }
+
+            const res = await fetch('/api/summarize-chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                messages: job.messages,
+                roomName: job.roomName
+              })
+            })
+            const data = await res.json() as AnalysisResult
+            return { roomName: job.roomName, data }
+          })
+        )
+
+        // Collect results
+        for (const { roomName, data } of batchResults) {
+          if (data) {
+            lastResult = data
+            if (data.insights && data.insights.length > 0) {
+              const insightsWithRoom = data.insights.map(insight => ({
+                ...insight,
+                roomName
+              }))
+              allNewInsights.push(...insightsWithRoom)
+            }
+          }
+        }
+      }
+
+      setResult(lastResult)
+
+      if (allNewInsights.length > 0) {
+        // Merge with existing insights (deduplicate by title + roomName)
+        const existingKeys = new Set(allInsights.map(i => `${i.roomName}:${i.title}`))
+        const newInsights = allNewInsights.filter(i => !existingKeys.has(`${i.roomName}:${i.title}`))
         const merged = [...newInsights, ...allInsights]
         setAllInsights(merged)
 
         // Save to localStorage
         localStorage.setItem('likethis_kakao_insights', JSON.stringify({
           insights: merged,
-          summary: data.summary,
+          summary: lastResult?.summary || '',
           updatedAt: new Date().toISOString(),
         }))
 
         // Also save for content factory
         localStorage.setItem('likethis_latest_kakao_analysis', JSON.stringify({
           insights: merged,
-          summary: data.summary,
+          summary: lastResult?.summary || '',
           analyzedAt: new Date().toISOString(),
         }))
       }
@@ -256,16 +327,24 @@ export default function KakaoInsightPage() {
 
     setGenerating(true)
     try {
+      // Build room names mapping from insights
+      const roomNamesMap: Record<string, string> = {}
+      allInsights.forEach(i => {
+        if (i.roomName) {
+          roomNamesMap[i.roomName] = i.roomName
+        }
+      })
+
       const response = await fetch('/api/generate-topics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           insights: allInsights.map(i => ({
             ...i,
-            roomId: 'kakao',
-            roomName: '카카오톡 대화'
+            roomId: i.roomName || 'kakao',
+            roomName: i.roomName || '카카오톡 대화'
           })),
-          roomNames: { 'kakao': '카카오톡 대화' },
+          roomNames: Object.keys(roomNamesMap).length > 0 ? roomNamesMap : { 'kakao': '카카오톡 대화' },
           interests: [],
         }),
       })
@@ -292,12 +371,15 @@ export default function KakaoInsightPage() {
     if (!user || generatedTopics.length === 0) return
 
     try {
+      // Get unique room names from insights
+      const roomNames = uniqueRooms.length > 0 ? uniqueRooms : ['카카오톡 대화']
+
       await firestore.saveTopicHistory(
         user.uid,
         generatedTopics,
         insightSummary,
         allInsights.length,
-        ['카카오톡 대화']
+        roomNames
       )
       setShowTopicsModal(false)
       setTopicHistoryCount(prev => prev + 1)
@@ -371,19 +453,36 @@ ${i.content}
     })
   }
 
-  const filteredInsights = categoryFilter === 'all'
+  // Get unique room names for filter
+  const uniqueRooms = Array.from(new Set(allInsights.map(i => i.roomName).filter(Boolean))) as string[]
+
+  // Apply both room and category filters
+  const filteredInsights = allInsights.filter(i => {
+    const matchRoom = roomFilter === 'all' || i.roomName === roomFilter
+    const matchCategory = categoryFilter === 'all' || i.category === categoryFilter
+    return matchRoom && matchCategory
+  })
+
+  // Count by category (with room filter applied)
+  const roomFilteredInsights = roomFilter === 'all'
     ? allInsights
-    : allInsights.filter(i => i.category === categoryFilter)
+    : allInsights.filter(i => i.roomName === roomFilter)
 
   const categoryCounts = {
-    all: allInsights.length,
-    command: allInsights.filter(i => i.category === 'command').length,
-    number: allInsights.filter(i => i.category === 'number').length,
-    solution: allInsights.filter(i => i.category === 'solution').length,
-    tool: allInsights.filter(i => i.category === 'tool').length,
-    trend: allInsights.filter(i => i.category === 'trend').length,
-    business: allInsights.filter(i => i.category === 'business').length,
+    all: roomFilteredInsights.length,
+    command: roomFilteredInsights.filter(i => i.category === 'command').length,
+    number: roomFilteredInsights.filter(i => i.category === 'number').length,
+    solution: roomFilteredInsights.filter(i => i.category === 'solution').length,
+    tool: roomFilteredInsights.filter(i => i.category === 'tool').length,
+    trend: roomFilteredInsights.filter(i => i.category === 'trend').length,
+    business: roomFilteredInsights.filter(i => i.category === 'business').length,
   }
+
+  // Count by room
+  const roomCounts: Record<string, number> = { all: allInsights.length }
+  uniqueRooms.forEach(room => {
+    roomCounts[room] = allInsights.filter(i => i.roomName === room).length
+  })
 
   return (
     <div className="space-y-6">
@@ -469,9 +568,21 @@ ${i.content}
                     {fileState.status === 'parsing' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin flex-shrink-0" />}
                     {fileState.status === 'pending' && <File className="w-4 h-4 text-gray-400 flex-shrink-0" />}
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{fileState.file.name}</p>
-                      <p className="text-xs text-gray-500">
-                        {fileState.status === 'done' && `${fileState.messages.length.toLocaleString()}개 메시지`}
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">{fileState.roomName}</p>
+                        {fileState.status === 'done' && (() => {
+                          const filtered = filterForAnalysis(fileState.messages)
+                          const removed = fileState.messages.length - filtered.length
+                          return (
+                            <span className="text-xs text-gray-400">
+                              {filtered.length.toLocaleString()}개
+                              {removed > 0 && <span className="text-green-600 ml-1">(-{removed} 필터)</span>}
+                            </span>
+                          )
+                        })()}
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">
+                        {fileState.status === 'done' && fileState.file.name}
                         {fileState.status === 'parsing' && '파싱 중...'}
                         {fileState.status === 'pending' && '대기 중'}
                         {fileState.status === 'error' && (fileState.error || '파싱 실패')}
@@ -487,24 +598,34 @@ ${i.content}
           )}
 
           {/* Message summary and analyze button */}
-          {newMessages.length > 0 && (
-            <div className="mt-4 flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2 text-sm text-green-700">
-                <FileText className="w-4 h-4" />
-                <span>총 {newMessages.length.toLocaleString()}개 메시지 준비됨</span>
+          {newMessages.length > 0 && (() => {
+            const totalOriginal = uploadedFiles.filter(f => f.status === 'done').reduce((sum, f) => sum + f.messages.length, 0)
+            const totalFiltered = uploadedFiles.filter(f => f.status === 'done').reduce((sum, f) => sum + filterForAnalysis(f.messages).length, 0)
+            const removed = totalOriginal - totalFiltered
+            return (
+              <div className="mt-4 flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex items-center gap-2 text-sm text-green-700">
+                  <FileText className="w-4 h-4" />
+                  <span>
+                    분석 대상: {totalFiltered.toLocaleString()}개 메시지
+                    {removed > 0 && (
+                      <span className="text-gray-500 ml-1">(원본 {totalOriginal.toLocaleString()}개, 노이즈 {removed.toLocaleString()}개 제거)</span>
+                    )}
+                  </span>
+                </div>
+                <Button onClick={handleAnalyze} disabled={analyzing} size="sm">
+                  {analyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      추출 중...
+                    </>
+                  ) : (
+                    '인사이트 추출'
+                  )}
+                </Button>
               </div>
-              <Button onClick={handleAnalyze} disabled={analyzing} size="sm">
-                {analyzing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    추출 중...
-                  </>
-                ) : (
-                  '인사이트 추출'
-                )}
-              </Button>
-            </div>
-          )}
+            )
+          })()}
         </CardContent>
       </Card>
 
@@ -542,6 +663,34 @@ ${i.content}
             </div>
           ) : (
             <>
+              {/* Room filter */}
+              {uniqueRooms.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs font-medium text-gray-500 mb-2">채팅방</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={roomFilter === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setRoomFilter('all')}
+                      className="gap-1"
+                    >
+                      💬 전체 <span className="text-xs opacity-70">({roomCounts.all})</span>
+                    </Button>
+                    {uniqueRooms.map(room => (
+                      <Button
+                        key={room}
+                        variant={roomFilter === room ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setRoomFilter(room)}
+                        className="gap-1"
+                      >
+                        {room} <span className="text-xs opacity-70">({roomCounts[room] || 0})</span>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Category filter */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {(['all', 'command', 'number', 'solution', 'tool', 'trend', 'business'] as const).map(cat => (
@@ -578,10 +727,15 @@ ${i.content}
                       <div className="flex items-start gap-3">
                         <span className="text-2xl">{getCategoryEmoji(insight.category)}</span>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-xs font-medium px-2 py-0.5 bg-gray-100 rounded">
                               {getCategoryLabel(insight.category)}
                             </span>
+                            {insight.roomName && roomFilter === 'all' && (
+                              <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 rounded">
+                                💬 {insight.roomName}
+                              </span>
+                            )}
                             <h3 className="font-medium text-gray-900">{insight.title}</h3>
                             {hasSourceQuotes && (
                               <span className="text-xs text-gray-400 ml-auto">
