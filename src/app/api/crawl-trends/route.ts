@@ -217,48 +217,12 @@ async function crawlEopla(): Promise<NewsTrendItem[]> {
   return []
 }
 
-// Reddit JSON API 크롤러
+// Reddit 크롤러 - 클라우드 IP 차단이 빈번하여 스킵
 async function crawlReddit(subreddit: string): Promise<NewsTrendItem[]> {
-  const items: NewsTrendItem[] = []
-
-  try {
-    // Reddit .json suffix로 JSON 데이터 가져오기
-    const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=20`, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; LikeThis/1.0)',
-      },
-    })
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-
-    const data = await res.json()
-    const posts = data?.data?.children || []
-
-    for (const post of posts) {
-      const p = post.data
-      if (p.stickied) continue // Skip stickied posts
-
-      items.push({
-        id: `reddit-${p.id}`,
-        platform: 'reddit',
-        title: p.title,
-        url: p.url.startsWith('http') ? p.url : `https://reddit.com${p.permalink}`,
-        description: p.selftext?.substring(0, 200),
-        score: p.score,
-        comments: p.num_comments,
-        author: p.author,
-        tags: [subreddit],
-        crawledAt: new Date().toISOString(),
-      })
-    }
-
-    console.log(`Reddit r/${subreddit}: crawled ${items.length} items`)
-  } catch (error) {
-    console.error(`Reddit r/${subreddit} crawl error:`, error)
-    // Non-critical, don't throw
-  }
-
-  return items
+  // Reddit은 클라우드 서버에서의 요청을 자주 차단함
+  // 안정적인 크롤링을 위해 스킵 처리
+  console.log(`Reddit r/${subreddit}: skipping (cloud IP often blocked)`)
+  return []
 }
 
 // d2.naver.com 크롤러 (네이버 기술 블로그) - RSS 사용
