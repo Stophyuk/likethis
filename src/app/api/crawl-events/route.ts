@@ -325,6 +325,277 @@ async function crawlOkky(): Promise<EventItem[]> {
   return events
 }
 
+// dev-event.vercel.app 크롤러 (GitHub JSON 직접 접근)
+async function crawlDevEvent(): Promise<EventItem[]> {
+  const events: EventItem[] = []
+
+  try {
+    // GitHub raw JSON에서 직접 데이터 가져오기
+    const res = await fetch('https://raw.githubusercontent.com/brave-people/Dev-Event/master/data/events.json', {
+      headers: { 'Accept': 'application/json' },
+    })
+
+    if (!res.ok) {
+      // Fallback: HTML 스크래핑
+      const html = await fetchWithHeaders('https://dev-event.vercel.app')
+      const eventRegex = /<a[^>]*href="([^"]+)"[^>]*>\s*<div[^>]*>[\s\S]*?<h3[^>]*>([^<]+)<\/h3>[\s\S]*?<p[^>]*>([^<]*)<\/p>/g
+
+      let match
+      while ((match = eventRegex.exec(html)) !== null) {
+        const [, url, title, dateStr] = match
+        events.push({
+          id: `dev-event-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          sourceId: 'dev-event',
+          platform: 'dev-event',
+          title: title.trim(),
+          description: '',
+          eventDate: new Date().toISOString(),
+          location: '상세 내용 참조',
+          isOnline: false,
+          registrationUrl: url.startsWith('http') ? url : `https://dev-event.vercel.app${url}`,
+          tags: ['개발', '컨퍼런스'],
+          eventType: detectEventType(title, ['개발']),
+          status: 'upcoming',
+          crawledAt: new Date().toISOString(),
+        })
+      }
+      return events.slice(0, 20)
+    }
+
+    const data = await res.json()
+    const eventList = Array.isArray(data) ? data : (data.events || [])
+
+    for (const event of eventList.slice(0, 30)) {
+      const title = event.title || event.name || ''
+      events.push({
+        id: `dev-event-${event.id || Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        sourceId: 'dev-event',
+        platform: 'dev-event',
+        title,
+        description: event.description || '',
+        eventDate: event.start_date || event.date || new Date().toISOString(),
+        eventEndDate: event.end_date,
+        location: event.location || '상세 내용 참조',
+        isOnline: event.online || /온라인|zoom|비대면/i.test(title),
+        registrationUrl: event.url || event.link || 'https://dev-event.vercel.app',
+        organizer: event.organizer,
+        cost: event.fee || '정보 없음',
+        tags: event.tags || ['개발'],
+        eventType: detectEventType(title, event.tags || ['개발']),
+        status: 'upcoming',
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`dev-event: crawled ${events.length} events`)
+  } catch (error) {
+    console.error('dev-event crawl error:', error)
+    throw error
+  }
+
+  return events
+}
+
+// event-us.kr 크롤러
+async function crawlEventUs(): Promise<EventItem[]> {
+  const events: EventItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://event-us.kr/search?category=it-tech')
+
+    // 이벤트 카드 추출
+    const cardRegex = /<a[^>]*href="(\/[^"]+)"[^>]*class="[^"]*event-card[^"]*"[^>]*>[\s\S]*?<h[34][^>]*>([^<]+)<\/h[34]>[\s\S]*?<span[^>]*class="[^"]*date[^"]*"[^>]*>([^<]+)<\/span>/gi
+
+    let match
+    while ((match = cardRegex.exec(html)) !== null) {
+      const [, urlPath, title, dateStr] = match
+
+      events.push({
+        id: `event-us-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        sourceId: 'event-us',
+        platform: 'event-us',
+        title: title.trim(),
+        description: '',
+        eventDate: parseKoreanDateString(dateStr) || new Date().toISOString(),
+        location: '상세 내용 참조',
+        isOnline: /온라인|zoom|비대면/i.test(title),
+        registrationUrl: `https://event-us.kr${urlPath}`,
+        tags: ['IT', '테크'],
+        eventType: detectEventType(title, ['IT', '테크']),
+        status: 'upcoming',
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    // 대체 패턴
+    if (events.length === 0) {
+      const altRegex = /href="(\/events\/[^"]+)"[^>]*>[\s\S]*?<[^>]*>([^<]{5,100})<\//g
+      while ((match = altRegex.exec(html)) !== null) {
+        const [, urlPath, title] = match
+        if (title && !title.includes('{') && !title.includes('<')) {
+          events.push({
+            id: `event-us-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            sourceId: 'event-us',
+            platform: 'event-us',
+            title: title.trim(),
+            description: '',
+            eventDate: new Date().toISOString(),
+            location: '상세 내용 참조',
+            isOnline: false,
+            registrationUrl: `https://event-us.kr${urlPath}`,
+            tags: ['IT', '테크'],
+            eventType: 'other',
+            status: 'upcoming',
+            crawledAt: new Date().toISOString(),
+          })
+        }
+      }
+    }
+
+    console.log(`event-us: crawled ${events.length} events`)
+  } catch (error) {
+    console.error('event-us crawl error:', error)
+    throw error
+  }
+
+  return events.slice(0, 20)
+}
+
+// k-startup.go.kr 크롤러
+async function crawlKStartup(): Promise<EventItem[]> {
+  const events: EventItem[] = []
+
+  try {
+    // AI/플랫폼 관련 프로그램 검색
+    const html = await fetchWithHeaders('https://www.k-startup.go.kr/web/contents/list.do?schM=PROGRAM&schBizPbancStr=AI')
+
+    // 프로그램 카드 추출
+    const cardRegex = /<a[^>]*href="([^"]+)"[^>]*>[\s\S]*?<[^>]*class="[^"]*tit[^"]*"[^>]*>([^<]+)<[\s\S]*?<[^>]*class="[^"]*date[^"]*"[^>]*>([^<]+)</gi
+
+    let match
+    while ((match = cardRegex.exec(html)) !== null) {
+      const [, url, title, dateStr] = match
+
+      events.push({
+        id: `k-startup-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        sourceId: 'k-startup',
+        platform: 'k-startup',
+        title: title.trim(),
+        description: '',
+        eventDate: parseKoreanDateString(dateStr) || new Date().toISOString(),
+        location: '상세 내용 참조',
+        isOnline: /온라인|비대면/i.test(title),
+        registrationUrl: url.startsWith('http') ? url : `https://www.k-startup.go.kr${url}`,
+        tags: ['스타트업', '지원사업', 'AI'],
+        eventType: 'other',
+        status: 'upcoming',
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`k-startup: crawled ${events.length} events`)
+  } catch (error) {
+    console.error('k-startup crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return events.slice(0, 15)
+}
+
+// allforyoung.com 크롤러
+async function crawlAllForYoung(): Promise<EventItem[]> {
+  const events: EventItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://www.allforyoung.com/posts/category/contest')
+
+    // 포스트 카드 추출
+    const cardRegex = /<a[^>]*href="(\/posts\/[^"]+)"[^>]*>[\s\S]*?<h[234][^>]*>([^<]+)<\/h[234]>[\s\S]*?<span[^>]*>([^<]*\d{4}[^<]*)<\/span>/gi
+
+    let match
+    while ((match = cardRegex.exec(html)) !== null) {
+      const [, urlPath, title, dateStr] = match
+
+      events.push({
+        id: `allforyoung-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        sourceId: 'allforyoung',
+        platform: 'allforyoung',
+        title: title.trim(),
+        description: '',
+        eventDate: parseKoreanDateString(dateStr) || new Date().toISOString(),
+        location: '상세 내용 참조',
+        isOnline: /온라인|비대면/i.test(title),
+        registrationUrl: `https://www.allforyoung.com${urlPath}`,
+        tags: ['청년', '지원사업'],
+        eventType: 'other',
+        status: 'upcoming',
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`allforyoung: crawled ${events.length} events`)
+  } catch (error) {
+    console.error('allforyoung crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return events.slice(0, 15)
+}
+
+// linkareer.com 크롤러
+async function crawlLinkareer(): Promise<EventItem[]> {
+  const events: EventItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://linkareer.com/list/contest?filterBy=CURRENT&orderBy=RECENT')
+
+    // 공모전/이벤트 카드 추출
+    const cardRegex = /<a[^>]*href="(\/activity\/[^"]+)"[^>]*>[\s\S]*?<[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)<[\s\S]*?<[^>]*class="[^"]*period[^"]*"[^>]*>([^<]+)</gi
+
+    let match
+    while ((match = cardRegex.exec(html)) !== null) {
+      const [, urlPath, title, periodStr] = match
+
+      events.push({
+        id: `linkareer-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        sourceId: 'linkareer',
+        platform: 'linkareer',
+        title: title.trim(),
+        description: '',
+        eventDate: parseKoreanDateString(periodStr) || new Date().toISOString(),
+        location: '상세 내용 참조',
+        isOnline: /온라인|비대면/i.test(title),
+        registrationUrl: `https://linkareer.com${urlPath}`,
+        tags: ['대학생', '취준', '공모전'],
+        eventType: 'other',
+        status: 'upcoming',
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`linkareer: crawled ${events.length} events`)
+  } catch (error) {
+    console.error('linkareer crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return events.slice(0, 15)
+}
+
+// Helper: Parse Korean date strings
+function parseKoreanDateString(dateStr: string): string | null {
+  if (!dateStr) return null
+
+  // Pattern: 2024.01.15 or 2024-01-15 or 2024년 1월 15일
+  const match = dateStr.match(/(\d{4})[.\-년\s]*(\d{1,2})[.\-월\s]*(\d{1,2})/)
+  if (match) {
+    const [, year, month, day] = match
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T09:00:00+09:00`
+  }
+
+  return null
+}
+
 // 플랫폼별 크롤러 선택
 async function crawlSource(source: EventSource): Promise<EventItem[]> {
   switch (source.platform) {
@@ -336,6 +607,16 @@ async function crawlSource(source: EventSource): Promise<EventItem[]> {
       return crawlFesta(source)
     case 'okky':
       return crawlOkky()
+    case 'dev-event':
+      return crawlDevEvent()
+    case 'event-us':
+      return crawlEventUs()
+    case 'k-startup':
+      return crawlKStartup()
+    case 'allforyoung':
+      return crawlAllForYoung()
+    case 'linkareer':
+      return crawlLinkareer()
     default:
       return []
   }

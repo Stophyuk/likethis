@@ -1,6 +1,6 @@
 import { db } from './config'
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, limit } from 'firebase/firestore'
-import type { TrendCollection, TrendItem, EventItem, NewsTrendItem, DeepWorkSession, FailFastLog, DailyReflection, JourneyDayStats, Venture, PersonalMonopoly, IncubatorIdea } from '@/types'
+import type { TrendCollection, TrendItem, EventItem, NewsTrendItem, DeepWorkSession, FailFastLog, DailyReflection, JourneyDayStats, Venture, PersonalMonopoly, IncubatorIdea, WeeklyTrendAnalysis } from '@/types'
 
 // ===== 설정 =====
 export async function saveUserSettings(uid: string, settings: {
@@ -393,6 +393,29 @@ export async function getNewsTrends(uid: string): Promise<NewsTrendData> {
 export async function getNewsTrendsByPlatform(uid: string, platform: string): Promise<NewsTrendItem[]> {
   const trends = await getNewsTrends(uid)
   return trends.items.filter(item => item.platform === platform)
+}
+
+// ===== 트렌드 분석 =====
+
+// 트렌드 분석 저장
+export async function saveTrendAnalysis(uid: string, analysis: WeeklyTrendAnalysis): Promise<string> {
+  const ref = doc(db, 'users', uid, 'trendAnalysis', analysis.id)
+  await setDoc(ref, analysis)
+  return analysis.id
+}
+
+// 트렌드 분석 히스토리 가져오기
+export async function getTrendAnalysisHistory(uid: string, limitCount: number = 10): Promise<WeeklyTrendAnalysis[]> {
+  const ref = collection(db, 'users', uid, 'trendAnalysis')
+  const q = query(ref, orderBy('analyzedAt', 'desc'), limit(limitCount))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => d.data() as WeeklyTrendAnalysis)
+}
+
+// 최근 트렌드 분석 가져오기
+export async function getLatestTrendAnalysis(uid: string): Promise<WeeklyTrendAnalysis | null> {
+  const history = await getTrendAnalysisHistory(uid, 1)
+  return history[0] || null
 }
 
 // ===== 포스팅 히스토리 =====

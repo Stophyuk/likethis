@@ -15,24 +15,24 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { href: '/dashboard', label: '홈', icon: '🏠' },
   {
-    href: '/dashboard/compose',
-    label: '창작',
-    icon: '✍️',
-    children: [
-      { href: '/dashboard/compose', label: '글쓰기' },
-      { href: '/dashboard/content-factory', label: '팩토리' },
-      { href: '/dashboard/muse', label: 'Muse' },
-    ],
-  },
-  {
     href: '/dashboard/events',
     label: '탐색',
     icon: '🔍',
     children: [
       { href: '/dashboard/events', label: '이벤트' },
       { href: '/dashboard/trends', label: '트렌드' },
-      { href: '/dashboard/kakao', label: '카톡' },
+      { href: '/dashboard/kakao', label: '카톡 인사이트' },
+    ],
+  },
+  {
+    href: '/dashboard/compose',
+    label: '창작',
+    icon: '✍️',
+    children: [
+      { href: '/dashboard/compose', label: '글쓰기' },
+      { href: '/dashboard/content-factory', label: '팩토리' },
       { href: '/dashboard/comment', label: '댓글' },
+      { href: '/dashboard/muse', label: 'Muse' },
     ],
   },
   {
@@ -45,7 +45,6 @@ export const navItems: NavItem[] = [
       { href: '/dashboard/guide', label: '가이드' },
     ],
   },
-  { href: '/dashboard/history', label: '기록', icon: '📊' },
   { href: '/dashboard/settings', label: '설정', icon: '⚙️' },
 ]
 

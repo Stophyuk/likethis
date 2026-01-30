@@ -156,7 +156,37 @@ export interface TrendCollection {
 // ===== 뉴스/트렌드 크롤링 =====
 
 // 뉴스 트렌드 플랫폼
-export type NewsTrendPlatform = 'geeknews' | 'hackernews' | 'producthunt' | 'disquiet';
+export type NewsTrendPlatform = 'geeknews' | 'hackernews' | 'producthunt' | 'disquiet' | 'eopla' | 'reddit' | 'd2naver' | 'kakaotech' | 'daangn' | 'velog' | 'yozm';
+
+// 트렌드 주간 분석 결과
+export interface WeeklyTrendAnalysis {
+  id: string;
+  summary: string;
+  hotTopics: Array<{
+    topic: string;
+    description: string;
+    frequency: number;
+    sources: string[];
+  }>;
+  insights: Array<{
+    title: string;
+    description: string;
+    actionItems: string[];
+  }>;
+  recommendedActions: Array<{
+    action: string;
+    platform: string;
+    reason: string;
+  }>;
+  keywords: {
+    trending: string[];
+    emerging: string[];
+  };
+  analyzedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  totalItemsAnalyzed: number;
+}
 
 // 뉴스/트렌드 아이템
 export interface NewsTrendItem {
@@ -175,7 +205,7 @@ export interface NewsTrendItem {
 // ===== 이벤트 모니터링 =====
 
 // 이벤트 소스 플랫폼
-export type EventSourcePlatform = 'onoffmix' | 'festa' | 'meetup' | 'okky' | 'custom';
+export type EventSourcePlatform = 'onoffmix' | 'festa' | 'meetup' | 'okky' | 'custom' | 'dev-event' | 'event-us' | 'k-startup' | 'allforyoung' | 'linkareer';
 
 // 이벤트 소스 (크롤링할 URL)
 export interface EventSource {

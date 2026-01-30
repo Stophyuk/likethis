@@ -22,10 +22,72 @@ interface Insight {
   sourceQuotes?: string[]  // 원본 대화 인용
 }
 
+// AI 인사이트 활용 제안
+interface ActionableInsight {
+  type: 'blog' | 'project' | 'learning' | 'networking'
+  title: string
+  description: string
+  relatedInsightTitles: string[]
+}
+
 interface ChunkInsights {
   insights: Insight[]
   resources: Array<{ url: string; description: string }>
   keyTopics: string[]
+}
+
+// Generate actionable insights from extracted insights
+async function generateActionableInsights(insights: Insight[]): Promise<ActionableInsight[]> {
+  if (insights.length === 0) return []
+
+  const insightSummary = insights.map((i, idx) =>
+    `${idx + 1}. [${i.category}] ${i.title}: ${i.content}`
+  ).join('\n')
+
+  const prompt = `추출된 인사이트를 바탕으로 실행 가능한 제안을 생성하세요.
+
+## 인사이트 목록
+${insightSummary}
+
+## 4가지 활용 유형
+1. **blog**: 블로그/SNS 글감 (기술 블로그, 링크드인 포스트)
+2. **project**: 사이드 프로젝트 아이디어
+3. **learning**: 학습 포인트 (공부할 것, 스킬 업)
+4. **networking**: 네트워킹 기회 (커뮤니티 활동, 밋업)
+
+## 규칙
+- 각 유형별로 1-2개씩 제안 (총 4-8개)
+- 실제로 실행 가능하고 구체적인 제안
+- 인사이트를 기반으로 한 근거 있는 제안
+- relatedInsightTitles에 관련 인사이트 제목 포함
+
+JSON:
+{
+  "actionable": [
+    {
+      "type": "blog|project|learning|networking",
+      "title": "제목",
+      "description": "구체적인 실행 방법",
+      "relatedInsightTitles": ["관련 인사이트 제목"]
+    }
+  ]
+}`
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 2000,
+      temperature: 0.5,
+    })
+
+    const result = JSON.parse(completion.choices[0].message.content || '{"actionable":[]}')
+    return result.actionable || []
+  } catch (error) {
+    console.error('Failed to generate actionable insights:', error)
+    return []
+  }
 }
 
 // 청크별 인사이트 추출
@@ -257,8 +319,13 @@ ${chatText.substring(0, 25000)}`
       })
 
       const result = JSON.parse(completion.choices[0].message.content || '{}')
+
+      // Generate actionable insights
+      const actionable = await generateActionableInsights(result.insights || [])
+
       return NextResponse.json({
         ...result,
+        actionable,
         _meta: {
           totalMessages: totalCount,
           analysisMethod: 'single',
@@ -305,8 +372,12 @@ ${chatText.substring(0, 25000)}`
 
       const result = await synthesizeInsights(chunkInsights, totalCount)
 
+      // Generate actionable insights
+      const actionable = await generateActionableInsights((result.insights as Insight[]) || [])
+
       return NextResponse.json({
         ...result,
+        actionable,
         _meta: {
           ...((result._meta as object) || {}),
           totalChunks: chunks.length,

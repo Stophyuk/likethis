@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Upload, FileText, Loader2, Database, Trash2, Link2, Download, Lightbulb, Briefcase, BookOpen, Zap, WifiOff } from 'lucide-react'
+import { ArrowLeft, Upload, FileText, Loader2, Database, Trash2, Link2, Download, Lightbulb, WifiOff, CheckCircle2, XCircle, File, PenTool, Rocket, GraduationCap, Users } from 'lucide-react'
 import { parseKakaoCsv, ChatMessage } from '@/lib/csv-parser'
 
 // 오프라인 에러인지 확인
@@ -42,10 +42,19 @@ interface ResourceItem {
   description?: string
 }
 
+// AI 인사이트 활용 제안
+interface ActionableItem {
+  type: 'blog' | 'project' | 'learning' | 'networking'
+  title: string
+  description: string
+  relatedInsightTitles: string[]
+}
+
 interface AnalysisResult {
   insights: InsightItem[]
   summary: string
   resources: (string | ResourceItem)[]
+  actionable?: ActionableItem[]
   noInsights?: boolean
   _meta?: {
     totalMessages: number
@@ -58,6 +67,14 @@ interface AnalysisResult {
 
 type CategoryFilter = 'all' | 'command' | 'number' | 'solution' | 'tool' | 'trend' | 'business'
 
+// Multi-file upload state
+interface FileUploadState {
+  file: File
+  status: 'pending' | 'parsing' | 'done' | 'error'
+  messages: ChatMessage[]
+  error?: string
+}
+
 export default function KakaoRoomPage() {
   const params = useParams()
   const router = useRouter()
@@ -65,6 +82,7 @@ export default function KakaoRoomPage() {
 
   const [room, setRoom] = useState<Room | null>(null)
   const [newMessages, setNewMessages] = useState<ChatMessage[]>([])
+  const [uploadedFiles, setUploadedFiles] = useState<FileUploadState[]>([])
   const [accumulatedData, setAccumulatedData] = useState<firestore.RoomChatData | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -156,31 +174,107 @@ export default function KakaoRoomPage() {
     loadData()
   }, [user, roomId, isOnline])
 
-  const handleFileUpload = useCallback((file: File) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const content = e.target?.result as string
-      const parsed = parseKakaoCsv(content)
-      console.log('CSV parsed:', parsed.length, 'messages')
-      setNewMessages(parsed)
-      setResult(null)
+  // Parse a single file and return messages
+  const parseFile = useCallback((file: File): Promise<ChatMessage[]> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string
+          const parsed = parseKakaoCsv(content)
+          resolve(parsed)
+        } catch (err) {
+          reject(err)
+        }
+      }
+      reader.onerror = () => reject(new Error('파일을 읽을 수 없습니다'))
+      reader.readAsText(file, 'UTF-8')
+    })
+  }, [])
+
+  // Handle multiple file uploads
+  const handleFilesUpload = useCallback(async (files: File[]) => {
+    const validFiles = files.filter(f => f.name.endsWith('.csv') || f.name.endsWith('.txt'))
+    if (validFiles.length === 0) return
+
+    // Initialize file states
+    const initialStates: FileUploadState[] = validFiles.map(file => ({
+      file,
+      status: 'pending',
+      messages: []
+    }))
+    setUploadedFiles(prev => [...prev, ...initialStates])
+    setResult(null)
+
+    // Parse files in parallel
+    const startIdx = uploadedFiles.length
+    for (let i = 0; i < validFiles.length; i++) {
+      const file = validFiles[i]
+      const fileIdx = startIdx + i
+
+      // Update status to parsing
+      setUploadedFiles(prev => prev.map((f, idx) =>
+        idx === fileIdx ? { ...f, status: 'parsing' } : f
+      ))
+
+      try {
+        const messages = await parseFile(file)
+        console.log(`CSV parsed (${file.name}):`, messages.length, 'messages')
+
+        // Update with parsed messages
+        setUploadedFiles(prev => prev.map((f, idx) =>
+          idx === fileIdx ? { ...f, status: 'done', messages } : f
+        ))
+      } catch (err) {
+        setUploadedFiles(prev => prev.map((f, idx) =>
+          idx === fileIdx ? { ...f, status: 'error', error: err instanceof Error ? err.message : '파싱 실패' } : f
+        ))
+      }
     }
-    reader.readAsText(file, 'UTF-8')
+  }, [uploadedFiles.length, parseFile])
+
+  // Merge all uploaded messages (deduplicated)
+  useEffect(() => {
+    const allMessages = uploadedFiles
+      .filter(f => f.status === 'done')
+      .flatMap(f => f.messages)
+
+    // Deduplicate by date + user + message
+    const seen = new Set<string>()
+    const unique = allMessages.filter(m => {
+      const key = `${m.date}_${m.user}_${m.message}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
+    setNewMessages(unique)
+  }, [uploadedFiles])
+
+  // Remove a file from the list
+  const removeFile = useCallback((idx: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== idx))
+  }, [])
+
+  // Clear all uploaded files
+  const clearAllFiles = useCallback(() => {
+    setUploadedFiles([])
+    setNewMessages([])
   }, [])
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
-    const file = e.dataTransfer.files[0]
-    if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt'))) {
-      handleFileUpload(file)
-    }
-  }, [handleFileUpload])
+    const files = Array.from(e.dataTransfer.files)
+    handleFilesUpload(files)
+  }, [handleFilesUpload])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) handleFileUpload(file)
-  }, [handleFileUpload])
+    const files = e.target.files ? Array.from(e.target.files) : []
+    if (files.length > 0) handleFilesUpload(files)
+    // Reset input value for re-selecting same file
+    e.target.value = ''
+  }, [handleFilesUpload])
 
   // 메시지 저장 (축적)
   const handleSaveMessages = async () => {
@@ -273,8 +367,9 @@ export default function KakaoRoomPage() {
         const updated = await firestore.getAllInsights(user.uid, roomId)
         setAllInsights(updated.insights)
       }
-      // 분석 완료 후 업로드된 메시지 클리어
+      // 분석 완료 후 업로드된 메시지 및 파일 목록 클리어
       setNewMessages([])
+      setUploadedFiles([])
     } catch (error) {
       console.error('Analysis failed:', error)
     } finally {
@@ -470,20 +565,76 @@ ${i.content}
               onChange={handleFileSelect}
               className="hidden"
               id="file-upload"
+              multiple
             />
             <label htmlFor="file-upload" className="cursor-pointer">
               <Upload className="w-10 h-10 mx-auto text-gray-400 mb-3" />
               <p className="text-gray-600 mb-1">CSV 파일을 드래그하거나 클릭하여 업로드</p>
-              <p className="text-sm text-gray-400">새 파일은 기존 메시지와 병합됩니다 (중복 제거)</p>
+              <p className="text-sm text-gray-400">여러 파일을 동시에 업로드할 수 있습니다 (중복 제거)</p>
             </label>
           </div>
 
-          {/* 새로 업로드된 메시지 */}
+          {/* 업로드된 파일 목록 */}
+          {uploadedFiles.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">
+                  업로드된 파일 ({uploadedFiles.length}개)
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearAllFiles}
+                  className="text-red-600 hover:text-red-700 h-7"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  전체 삭제
+                </Button>
+              </div>
+              {uploadedFiles.map((fileState, idx) => (
+                <div
+                  key={`${fileState.file.name}-${idx}`}
+                  className={`flex items-center justify-between p-3 rounded-lg border ${
+                    fileState.status === 'done' ? 'bg-green-50 border-green-200' :
+                    fileState.status === 'error' ? 'bg-red-50 border-red-200' :
+                    fileState.status === 'parsing' ? 'bg-blue-50 border-blue-200' :
+                    'bg-gray-50 border-gray-200'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {fileState.status === 'done' && <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />}
+                    {fileState.status === 'error' && <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />}
+                    {fileState.status === 'parsing' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin flex-shrink-0" />}
+                    {fileState.status === 'pending' && <File className="w-4 h-4 text-gray-400 flex-shrink-0" />}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{fileState.file.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {fileState.status === 'done' && `${fileState.messages.length.toLocaleString()}개 메시지`}
+                        {fileState.status === 'parsing' && '파싱 중...'}
+                        {fileState.status === 'pending' && '대기 중'}
+                        {fileState.status === 'error' && (fileState.error || '파싱 실패')}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(idx)}
+                    className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* 총 메시지 수 요약 */}
           {newMessages.length > 0 && (
             <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
               <div className="flex items-center gap-2 text-sm text-green-700">
                 <FileText className="w-4 h-4" />
-                <span>새로 업로드: {newMessages.length.toLocaleString()}개 메시지</span>
+                <span>총 {newMessages.length.toLocaleString()}개 메시지 준비됨 (중복 제거 완료)</span>
               </div>
             </div>
           )}
@@ -620,6 +771,53 @@ ${i.content}
                   해당 카테고리에 인사이트가 없습니다
                 </p>
               )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI 인사이트 활용 제안 */}
+      {result?.actionable && result.actionable.length > 0 && (
+        <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-white">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Rocket className="w-5 h-5 text-purple-500" />
+              AI 인사이트 활용 제안
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-4">
+              {result.actionable.map((action, idx) => {
+                const typeConfig = {
+                  blog: { icon: PenTool, label: '블로그/SNS 글감', color: 'text-blue-600 bg-blue-100' },
+                  project: { icon: Rocket, label: '프로젝트 아이디어', color: 'text-green-600 bg-green-100' },
+                  learning: { icon: GraduationCap, label: '학습 포인트', color: 'text-orange-600 bg-orange-100' },
+                  networking: { icon: Users, label: '네트워킹 기회', color: 'text-purple-600 bg-purple-100' },
+                }[action.type] || { icon: Lightbulb, label: '제안', color: 'text-gray-600 bg-gray-100' }
+
+                const Icon = typeConfig.icon
+                return (
+                  <div key={idx} className="p-4 bg-white border rounded-lg hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${typeConfig.color}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded ${typeConfig.color}`}>
+                          {typeConfig.label}
+                        </span>
+                        <h4 className="font-medium text-gray-900 mt-2">{action.title}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{action.description}</p>
+                        {action.relatedInsightTitles && action.relatedInsightTitles.length > 0 && (
+                          <div className="mt-2 text-xs text-gray-400">
+                            관련: {action.relatedInsightTitles.join(', ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>

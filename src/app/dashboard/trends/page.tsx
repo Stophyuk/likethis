@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Plus, TrendingUp, Sparkles, Trash2, RefreshCw, ExternalLink, ArrowUp, MessageSquare, Newspaper, Lightbulb, Users } from 'lucide-react'
-import type { TrendItem, TrendCollection, TrendSource, NewsTrendItem, NewsTrendPlatform } from '@/types'
+import { Plus, TrendingUp, Sparkles, Trash2, RefreshCw, ExternalLink, ArrowUp, MessageSquare, Newspaper, Lightbulb, Users, Brain, History, ChevronDown, ChevronUp, Zap } from 'lucide-react'
+import type { TrendItem, TrendCollection, TrendSource, NewsTrendItem, NewsTrendPlatform, WeeklyTrendAnalysis } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import * as firestore from '@/lib/firebase/firestore'
 
@@ -78,7 +78,16 @@ const platformInfo: Record<NewsTrendPlatform, { name: string; color: string; ico
   hackernews: { name: 'Hacker News', color: 'bg-orange-100 text-orange-800', icon: '🔥' },
   producthunt: { name: 'Product Hunt', color: 'bg-red-100 text-red-800', icon: '🚀' },
   disquiet: { name: 'Disquiet', color: 'bg-purple-100 text-purple-800', icon: '💡' },
+  eopla: { name: 'Eopla', color: 'bg-blue-100 text-blue-800', icon: '📰' },
+  reddit: { name: 'Reddit', color: 'bg-orange-100 text-orange-800', icon: '🔗' },
+  d2naver: { name: 'D2 Naver', color: 'bg-green-100 text-green-800', icon: '🟢' },
+  kakaotech: { name: 'Kakao Tech', color: 'bg-yellow-100 text-yellow-800', icon: '🟡' },
+  daangn: { name: '당근 Tech', color: 'bg-orange-100 text-orange-800', icon: '🥕' },
+  velog: { name: 'Velog', color: 'bg-teal-100 text-teal-800', icon: '📝' },
+  yozm: { name: '요즘IT', color: 'bg-indigo-100 text-indigo-800', icon: '💻' },
 }
+
+const ANALYSIS_HISTORY_KEY = 'likethis_trend_analysis_history'
 
 export default function TrendsPage() {
   const { user } = useAuth()
@@ -114,6 +123,13 @@ export default function TrendsPage() {
     contentIdeas: Array<{ topic: string; angle: string; targetAudience: string }>
   } | null>(null)
 
+  // 7일 AI 분석 상태
+  const [weeklyAnalyzing, setWeeklyAnalyzing] = useState(false)
+  const [weeklyAnalysis, setWeeklyAnalysis] = useState<WeeklyTrendAnalysis | null>(null)
+  const [analysisHistory, setAnalysisHistory] = useState<WeeklyTrendAnalysis[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [expandedInsights, setExpandedInsights] = useState<Set<number>>(new Set())
+
   useEffect(() => {
     const saved = loadTrends()
     if (saved) {
@@ -123,6 +139,18 @@ export default function TrendsPage() {
           setSummary(JSON.parse(saved.summary))
         } catch {}
       }
+    }
+
+    // Load analysis history from localStorage
+    const historyStr = localStorage.getItem(ANALYSIS_HISTORY_KEY)
+    if (historyStr) {
+      try {
+        const history = JSON.parse(historyStr) as WeeklyTrendAnalysis[]
+        setAnalysisHistory(history)
+        if (history.length > 0) {
+          setWeeklyAnalysis(history[0]) // Show most recent
+        }
+      } catch {}
     }
   }, [])
 
@@ -156,7 +184,7 @@ export default function TrendsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          platforms: ['geeknews', 'hackernews', 'producthunt', 'disquiet']
+          platforms: ['geeknews', 'hackernews', 'producthunt', 'disquiet', 'eopla', 'reddit', 'd2naver', 'kakaotech', 'velog', 'yozm']
         }),
       })
       const data = await res.json()
@@ -172,6 +200,57 @@ export default function TrendsPage() {
     } finally {
       setCrawling(false)
     }
+  }
+
+  // 7일 AI 분석
+  const handleWeeklyAnalysis = async () => {
+    if (newsTrends.length === 0) return
+
+    setWeeklyAnalyzing(true)
+    try {
+      const res = await fetch('/api/analyze-weekly-trends', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: newsTrends }),
+      })
+
+      if (!res.ok) throw new Error('Analysis failed')
+
+      const analysis: WeeklyTrendAnalysis = await res.json()
+      setWeeklyAnalysis(analysis)
+
+      // Save to history (keep last 10)
+      const newHistory = [analysis, ...analysisHistory].slice(0, 10)
+      setAnalysisHistory(newHistory)
+      localStorage.setItem(ANALYSIS_HISTORY_KEY, JSON.stringify(newHistory))
+
+      // Save latest analysis for content factory
+      localStorage.setItem('likethis_trend_analysis', JSON.stringify(analysis))
+
+      // Also save to Firestore if user is logged in
+      if (user) {
+        try {
+          await firestore.saveTrendAnalysis(user.uid, analysis)
+        } catch (e) {
+          console.error('Failed to save analysis to Firestore:', e)
+        }
+      }
+    } catch (error) {
+      console.error('Weekly analysis failed:', error)
+      alert('분석에 실패했습니다. 다시 시도해주세요.')
+    } finally {
+      setWeeklyAnalyzing(false)
+    }
+  }
+
+  const toggleInsight = (index: number) => {
+    const newSet = new Set(expandedInsights)
+    if (newSet.has(index)) {
+      newSet.delete(index)
+    } else {
+      newSet.add(index)
+    }
+    setExpandedInsights(newSet)
   }
 
   const handleTranslateOpportunity = async () => {
@@ -331,6 +410,18 @@ export default function TrendsPage() {
             </div>
             <div className="flex gap-2">
               <Button
+                onClick={handleWeeklyAnalysis}
+                disabled={weeklyAnalyzing || newsTrends.length === 0}
+                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+              >
+                {weeklyAnalyzing ? (
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Brain className="w-4 h-4 mr-2" />
+                )}
+                {weeklyAnalyzing ? '분석 중...' : 'AI 분석'}
+              </Button>
+              <Button
                 variant="outline"
                 onClick={handleTranslateOpportunity}
                 disabled={translating || filteredNews.length === 0}
@@ -342,7 +433,7 @@ export default function TrendsPage() {
                 )}
                 {translating ? '분석 중...' : '기회 해석'}
               </Button>
-              <Button onClick={handleCrawlTrends} disabled={crawling}>
+              <Button onClick={handleCrawlTrends} disabled={crawling} variant="outline">
                 {crawling ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
@@ -357,6 +448,172 @@ export default function TrendsPage() {
             <p className="text-sm text-gray-500">
               마지막 수집: {new Date(lastCrawled).toLocaleString('ko-KR')}
             </p>
+          )}
+
+          {/* 7일 AI 분석 결과 */}
+          {weeklyAnalysis && (
+            <Card className="bg-gradient-to-br from-purple-50 to-blue-50 border-purple-200">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Brain className="w-5 h-5 text-purple-600" />
+                    7일 트렌드 AI 분석
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowHistory(!showHistory)}
+                    >
+                      <History className="w-4 h-4 mr-1" />
+                      히스토리
+                      {showHistory ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
+                    </Button>
+                    <span className="text-xs text-gray-500">
+                      {new Date(weeklyAnalysis.analyzedAt).toLocaleDateString('ko-KR')}
+                    </span>
+                  </div>
+                </div>
+                <CardDescription>
+                  {weeklyAnalysis.totalItemsAnalyzed}개 항목 분석
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* 요약 */}
+                <div className="bg-white/80 rounded-lg p-4">
+                  <p className="text-gray-800">{weeklyAnalysis.summary}</p>
+                </div>
+
+                {/* 핫토픽 */}
+                {weeklyAnalysis.hotTopics?.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-sm text-purple-800 mb-2 flex items-center gap-1">
+                      <TrendingUp className="w-4 h-4" /> 핫토픽
+                    </h4>
+                    <div className="grid gap-2 md:grid-cols-2">
+                      {weeklyAnalysis.hotTopics.map((topic, i) => (
+                        <div key={i} className="bg-white/80 rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-sm">{topic.topic}</span>
+                            <span className="text-xs text-purple-600">🔥 {topic.frequency}/10</span>
+                          </div>
+                          <p className="text-xs text-gray-600">{topic.description}</p>
+                          <div className="flex gap-1 mt-1">
+                            {topic.sources.slice(0, 3).map((src, j) => (
+                              <span key={j} className="text-xs px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded">
+                                {src}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 인사이트 */}
+                {weeklyAnalysis.insights?.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-sm text-blue-800 mb-2 flex items-center gap-1">
+                      <Lightbulb className="w-4 h-4" /> 인사이트
+                    </h4>
+                    <div className="space-y-2">
+                      {weeklyAnalysis.insights.map((insight, i) => (
+                        <div key={i} className="bg-white/80 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() => toggleInsight(i)}
+                            className="w-full p-3 text-left flex items-center justify-between hover:bg-gray-50"
+                          >
+                            <span className="font-medium text-sm">{insight.title}</span>
+                            {expandedInsights.has(i) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          </button>
+                          {expandedInsights.has(i) && (
+                            <div className="px-3 pb-3 border-t">
+                              <p className="text-sm text-gray-600 mt-2">{insight.description}</p>
+                              {insight.actionItems?.length > 0 && (
+                                <ul className="mt-2 space-y-1">
+                                  {insight.actionItems.map((item, j) => (
+                                    <li key={j} className="text-xs text-gray-600 flex items-start gap-1">
+                                      <Zap className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
+                                      {item}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 추천 액션 */}
+                {weeklyAnalysis.recommendedActions?.length > 0 && (
+                  <div>
+                    <h4 className="font-medium text-sm text-green-800 mb-2 flex items-center gap-1">
+                      <Zap className="w-4 h-4" /> 추천 액션
+                    </h4>
+                    <div className="space-y-2">
+                      {weeklyAnalysis.recommendedActions.map((action, i) => (
+                        <div key={i} className="bg-white/80 rounded-lg p-3 flex items-start gap-2">
+                          <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded flex-shrink-0">
+                            {action.platform}
+                          </span>
+                          <div>
+                            <p className="text-sm font-medium">{action.action}</p>
+                            <p className="text-xs text-gray-500">{action.reason}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 키워드 */}
+                {weeklyAnalysis.keywords && (
+                  <div className="flex flex-wrap gap-2">
+                    {weeklyAnalysis.keywords.trending?.map((kw, i) => (
+                      <span key={`t-${i}`} className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">
+                        🔥 {kw}
+                      </span>
+                    ))}
+                    {weeklyAnalysis.keywords.emerging?.map((kw, i) => (
+                      <span key={`e-${i}`} className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                        🌱 {kw}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 분석 히스토리 */}
+          {showHistory && analysisHistory.length > 1 && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">분석 히스토리</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {analysisHistory.slice(1).map((analysis, i) => (
+                    <button
+                      key={analysis.id}
+                      onClick={() => setWeeklyAnalysis(analysis)}
+                      className="w-full text-left p-2 rounded hover:bg-gray-50 border flex items-center justify-between"
+                    >
+                      <span className="text-sm">
+                        {new Date(analysis.analyzedAt).toLocaleDateString('ko-KR')} 분석
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {analysis.totalItemsAnalyzed}개 항목
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* 뉴스 목록 */}

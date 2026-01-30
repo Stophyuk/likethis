@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { ArticleCard } from '@/components/content-factory/ArticleCard';
 import {
   VibeCodingTheme,
@@ -9,12 +10,14 @@ import {
   TargetAudience,
   GeneratedArticle,
   BulkArticleResponse,
+  WeeklyTrendAnalysis,
 } from '@/types';
 import {
   vibeCodingBlocks,
   themeDisplayNames,
   getBlocksByTheme,
 } from '@/lib/vibe-coding-content';
+import { MessageSquare, TrendingUp, FileText, Check, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 
 interface StoredInsight {
   category: string;
@@ -30,10 +33,21 @@ interface StoredAnalysis {
   analyzedAt?: string;
 }
 
+// Trend analysis insight (converted from WeeklyTrendAnalysis)
+interface TrendInsight {
+  title: string;
+  content: string;
+  tags: string[];
+  source: 'trend';
+}
+
 export default function ContentFactoryPage() {
   // Source selection
   const [storedInsights, setStoredInsights] = useState<StoredInsight[]>([]);
-  const [useInsights, setUseInsights] = useState(true);
+  const [trendInsights, setTrendInsights] = useState<TrendInsight[]>([]);
+  const [trendAnalysis, setTrendAnalysis] = useState<WeeklyTrendAnalysis | null>(null);
+  const [useKakaoInsights, setUseKakaoInsights] = useState(true);
+  const [useTrendInsights, setUseTrendInsights] = useState(true);
   const [useVibeCoding, setUseVibeCoding] = useState(true);
   const [selectedThemes, setSelectedThemes] = useState<VibeCodingTheme[]>([
     'intro',
@@ -43,6 +57,11 @@ export default function ContentFactoryPage() {
     'execution',
     'conclusion',
   ]);
+
+  // Preview states
+  const [showKakaoPreview, setShowKakaoPreview] = useState(false);
+  const [showTrendPreview, setShowTrendPreview] = useState(false);
+  const [showVibeCodingPreview, setShowVibeCodingPreview] = useState(false);
 
   // Settings
   const [targetAudience, setTargetAudience] = useState<TargetAudience>('general');
@@ -62,16 +81,15 @@ export default function ContentFactoryPage() {
   // Load insights from localStorage
   useEffect(() => {
     const loadInsights = () => {
-      const insights: StoredInsight[] = [];
-
-      // Check for recent analysis in localStorage
+      // Load Kakao insights
+      const kakaoInsights: StoredInsight[] = [];
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key?.startsWith('kakao_analysis_')) {
           try {
             const data: StoredAnalysis = JSON.parse(localStorage.getItem(key) || '{}');
             if (data.insights) {
-              insights.push(...data.insights);
+              kakaoInsights.push(...data.insights);
             }
           } catch {
             // Skip invalid entries
@@ -85,11 +103,10 @@ export default function ContentFactoryPage() {
         try {
           const data: StoredAnalysis = JSON.parse(latestAnalysis);
           if (data.insights) {
-            // Avoid duplicates
-            const existingTitles = new Set(insights.map(i => i.title));
+            const existingTitles = new Set(kakaoInsights.map(i => i.title));
             data.insights.forEach(insight => {
               if (!existingTitles.has(insight.title)) {
-                insights.push(insight);
+                kakaoInsights.push(insight);
               }
             });
           }
@@ -97,8 +114,47 @@ export default function ContentFactoryPage() {
           // Skip
         }
       }
+      setStoredInsights(kakaoInsights);
 
-      setStoredInsights(insights);
+      // Load trend analysis
+      const trendData = localStorage.getItem('likethis_trend_analysis');
+      if (trendData) {
+        try {
+          const analysis: WeeklyTrendAnalysis = JSON.parse(trendData);
+          setTrendAnalysis(analysis);
+
+          // Convert trend analysis to insights
+          const insights: TrendInsight[] = [];
+
+          // Add hot topics as insights
+          if (analysis.hotTopics) {
+            analysis.hotTopics.forEach(topic => {
+              insights.push({
+                title: topic.topic,
+                content: topic.description,
+                tags: topic.sources || [],
+                source: 'trend',
+              });
+            });
+          }
+
+          // Add insights from analysis
+          if (analysis.insights) {
+            analysis.insights.forEach(insight => {
+              insights.push({
+                title: insight.title,
+                content: insight.description,
+                tags: insight.actionItems?.slice(0, 2) || [],
+                source: 'trend',
+              });
+            });
+          }
+
+          setTrendInsights(insights);
+        } catch {
+          // Skip
+        }
+      }
     };
 
     loadInsights();
@@ -130,7 +186,7 @@ export default function ContentFactoryPage() {
       return;
     }
 
-    if (!useInsights && !useVibeCoding) {
+    if (!useKakaoInsights && !useTrendInsights && !useVibeCoding) {
       setError('최소 1개 소스를 선택하세요.');
       return;
     }
@@ -139,16 +195,40 @@ export default function ContentFactoryPage() {
     setError(null);
 
     try {
-      // Prepare insights
-      const insightsToUse = useInsights
-        ? storedInsights.map((insight, idx) => ({
-            id: String(idx),
+      // Prepare insights from both sources
+      const insightsToUse: Array<{
+        id: string;
+        title: string;
+        content: string;
+        tags: string[];
+        sourceQuotes?: string[];
+      }> = [];
+
+      // Add Kakao insights
+      if (useKakaoInsights && storedInsights.length > 0) {
+        storedInsights.forEach((insight, idx) => {
+          insightsToUse.push({
+            id: `kakao-${idx}`,
             title: insight.title,
             content: insight.content,
             tags: insight.tags,
             sourceQuotes: insight.sourceQuotes,
-          }))
-        : [];
+          });
+        });
+      }
+
+      // Add trend insights
+      if (useTrendInsights && trendInsights.length > 0) {
+        trendInsights.forEach((insight, idx) => {
+          insightsToUse.push({
+            id: `trend-${idx}`,
+            title: insight.title,
+            content: insight.content,
+            tags: insight.tags,
+            sourceQuotes: [],
+          });
+        });
+      }
 
       // If no insights, add a placeholder
       if (insightsToUse.length === 0 && useVibeCoding) {
@@ -200,77 +280,193 @@ export default function ContentFactoryPage() {
         </p>
       </div>
 
-      {/* Source Selection */}
-      <div className="bg-white rounded-lg border p-6 space-y-4">
+      {/* Source Selection - Toggle Cards */}
+      <div className="space-y-4">
         <h2 className="font-semibold text-gray-900 flex items-center gap-2">
           📚 소스 선택
         </h2>
 
-        {/* Insights */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={useInsights}
-              onChange={(e) => setUseInsights(e.target.checked)}
-              className="rounded"
-            />
-            <span>카카오 인사이트</span>
-            <span className="text-sm text-gray-500">
-              ({storedInsights.length}개)
-            </span>
-          </label>
-          {storedInsights.length === 0 && (
-            <p className="text-sm text-amber-600 ml-6">
-              카톡 분석 결과가 없습니다. 카톡 메뉴에서 먼저 분석을 진행하세요.
-            </p>
-          )}
-        </div>
-
-        {/* Vibe Coding */}
-        <div className="space-y-2">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={useVibeCoding}
-              onChange={(e) => setUseVibeCoding(e.target.checked)}
-              className="rounded"
-            />
-            <span>바이브코딩 보고서</span>
-            <span className="text-sm text-gray-500">
-              ({vibeCodingBlocks.length}개 블록)
-            </span>
-          </label>
-
-          {useVibeCoding && (
-            <div className="ml-6 space-y-2">
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-600">테마 선택:</span>
+        <div className="grid md:grid-cols-3 gap-4">
+          {/* Kakao Insights Card */}
+          <Card
+            className={`cursor-pointer transition-all ${
+              useKakaoInsights
+                ? 'border-yellow-400 bg-yellow-50 ring-2 ring-yellow-400'
+                : 'border-gray-200 hover:border-yellow-300'
+            }`}
+            onClick={() => setUseKakaoInsights(!useKakaoInsights)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${useKakaoInsights ? 'bg-yellow-200' : 'bg-gray-100'}`}>
+                    <MessageSquare className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900">카카오 인사이트</h3>
+                    <p className="text-sm text-gray-500">{storedInsights.length}개</p>
+                  </div>
+                </div>
+                {useKakaoInsights && <Check className="w-5 h-5 text-yellow-600" />}
+              </div>
+              {storedInsights.length === 0 ? (
+                <p className="text-xs text-amber-600 mt-3">
+                  카톡 분석 결과 없음
+                </p>
+              ) : (
                 <button
-                  onClick={selectAllThemes}
-                  className="text-blue-600 hover:underline"
+                  onClick={(e) => { e.stopPropagation(); setShowKakaoPreview(!showKakaoPreview); }}
+                  className="text-xs text-blue-600 mt-3 flex items-center gap-1 hover:underline"
                 >
-                  전체
+                  <Eye className="w-3 h-3" />
+                  {showKakaoPreview ? '미리보기 닫기' : '미리보기'}
                 </button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Trend Insights Card */}
+          <Card
+            className={`cursor-pointer transition-all ${
+              useTrendInsights
+                ? 'border-blue-400 bg-blue-50 ring-2 ring-blue-400'
+                : 'border-gray-200 hover:border-blue-300'
+            }`}
+            onClick={() => setUseTrendInsights(!useTrendInsights)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${useTrendInsights ? 'bg-blue-200' : 'bg-gray-100'}`}>
+                    <TrendingUp className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900">트렌드 인사이트</h3>
+                    <p className="text-sm text-gray-500">{trendInsights.length}개</p>
+                  </div>
+                </div>
+                {useTrendInsights && <Check className="w-5 h-5 text-blue-600" />}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {(Object.entries(themeDisplayNames) as [VibeCodingTheme, string][]).map(
-                  ([theme, name]) => (
-                    <label key={theme} className="flex items-center gap-1.5">
-                      <input
-                        type="checkbox"
-                        checked={selectedThemes.includes(theme)}
-                        onChange={() => toggleTheme(theme)}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{name}</span>
-                    </label>
-                  )
-                )}
+              {trendInsights.length === 0 ? (
+                <p className="text-xs text-amber-600 mt-3">
+                  트렌드 분석 결과 없음
+                </p>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowTrendPreview(!showTrendPreview); }}
+                  className="text-xs text-blue-600 mt-3 flex items-center gap-1 hover:underline"
+                >
+                  <Eye className="w-3 h-3" />
+                  {showTrendPreview ? '미리보기 닫기' : '미리보기'}
+                </button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Vibe Coding Card */}
+          <Card
+            className={`cursor-pointer transition-all ${
+              useVibeCoding
+                ? 'border-purple-400 bg-purple-50 ring-2 ring-purple-400'
+                : 'border-gray-200 hover:border-purple-300'
+            }`}
+            onClick={() => setUseVibeCoding(!useVibeCoding)}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${useVibeCoding ? 'bg-purple-200' : 'bg-gray-100'}`}>
+                    <FileText className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-medium text-gray-900">바이브코딩 보고서</h3>
+                    <p className="text-sm text-gray-500">{vibeCodingBlocks.length}개 블록</p>
+                  </div>
+                </div>
+                {useVibeCoding && <Check className="w-5 h-5 text-purple-600" />}
               </div>
-            </div>
-          )}
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowVibeCodingPreview(!showVibeCodingPreview); }}
+                className="text-xs text-blue-600 mt-3 flex items-center gap-1 hover:underline"
+              >
+                <Eye className="w-3 h-3" />
+                {showVibeCodingPreview ? '미리보기 닫기' : '미리보기'}
+              </button>
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Kakao Preview */}
+        {showKakaoPreview && storedInsights.length > 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-yellow-800 mb-2">카카오 인사이트 미리보기</h4>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {storedInsights.slice(0, 5).map((insight, idx) => (
+                <div key={idx} className="text-sm bg-white p-2 rounded border">
+                  <span className="font-medium">{insight.title}</span>
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">{insight.content}</p>
+                </div>
+              ))}
+              {storedInsights.length > 5 && (
+                <p className="text-xs text-yellow-600">+{storedInsights.length - 5}개 더...</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Trend Preview */}
+        {showTrendPreview && trendInsights.length > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-blue-800 mb-2">트렌드 인사이트 미리보기</h4>
+            {trendAnalysis?.summary && (
+              <p className="text-sm text-blue-700 mb-3">{trendAnalysis.summary}</p>
+            )}
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {trendInsights.slice(0, 5).map((insight, idx) => (
+                <div key={idx} className="text-sm bg-white p-2 rounded border">
+                  <span className="font-medium">{insight.title}</span>
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">{insight.content}</p>
+                </div>
+              ))}
+              {trendInsights.length > 5 && (
+                <p className="text-xs text-blue-600">+{trendInsights.length - 5}개 더...</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Vibe Coding Preview & Theme Selection */}
+        {showVibeCodingPreview && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-purple-800 mb-2">바이브코딩 테마 선택</h4>
+            <div className="flex items-center gap-2 text-sm mb-3">
+              <span className="text-gray-600">테마:</span>
+              <button
+                onClick={selectAllThemes}
+                className="text-purple-600 hover:underline"
+              >
+                전체 선택
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(Object.entries(themeDisplayNames) as [VibeCodingTheme, string][]).map(
+                ([theme, name]) => (
+                  <button
+                    key={theme}
+                    onClick={() => toggleTheme(theme)}
+                    className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+                      selectedThemes.includes(theme)
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white text-gray-700 border hover:border-purple-400'
+                    }`}
+                  >
+                    {name}
+                  </button>
+                )
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Settings */}

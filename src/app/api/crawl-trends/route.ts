@@ -281,6 +281,279 @@ async function crawlDisquiet(): Promise<NewsTrendItem[]> {
   return items.slice(0, 20)
 }
 
+// eopla.net 크롤러 (스타트업 뉴스)
+async function crawlEopla(): Promise<NewsTrendItem[]> {
+  const items: NewsTrendItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://www.eopla.net/')
+
+    // 뉴스 아이템 추출
+    const articleRegex = /<a[^>]*href="(\/[^"]*)"[^>]*>[\s\S]*?<h[23][^>]*>([^<]+)<\/h[23]>/gi
+
+    let match
+    while ((match = articleRegex.exec(html)) !== null) {
+      const [, urlPath, title] = match
+      if (title && title.trim().length > 10) {
+        items.push({
+          id: `eopla-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+          platform: 'eopla',
+          title: title.trim(),
+          url: `https://www.eopla.net${urlPath}`,
+          tags: ['스타트업', '뉴스'],
+          crawledAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    console.log(`Eopla: crawled ${items.length} items`)
+  } catch (error) {
+    console.error('Eopla crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return items.slice(0, 20)
+}
+
+// Reddit JSON API 크롤러
+async function crawlReddit(subreddit: string): Promise<NewsTrendItem[]> {
+  const items: NewsTrendItem[] = []
+
+  try {
+    // Reddit .json suffix로 JSON 데이터 가져오기
+    const res = await fetch(`https://www.reddit.com/r/${subreddit}/hot.json?limit=20`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; LikeThis/1.0)',
+      },
+    })
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const data = await res.json()
+    const posts = data?.data?.children || []
+
+    for (const post of posts) {
+      const p = post.data
+      if (p.stickied) continue // Skip stickied posts
+
+      items.push({
+        id: `reddit-${p.id}`,
+        platform: 'reddit',
+        title: p.title,
+        url: p.url.startsWith('http') ? p.url : `https://reddit.com${p.permalink}`,
+        description: p.selftext?.substring(0, 200),
+        score: p.score,
+        comments: p.num_comments,
+        author: p.author,
+        tags: [subreddit],
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`Reddit r/${subreddit}: crawled ${items.length} items`)
+  } catch (error) {
+    console.error(`Reddit r/${subreddit} crawl error:`, error)
+    // Non-critical, don't throw
+  }
+
+  return items
+}
+
+// d2.naver.com 크롤러 (네이버 기술 블로그)
+async function crawlD2Naver(): Promise<NewsTrendItem[]> {
+  const items: NewsTrendItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://d2.naver.com/helloworld')
+
+    // 포스트 추출
+    const postRegex = /<a[^>]*href="(\/helloworld\/\d+)"[^>]*>[\s\S]*?<[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)</gi
+
+    let match
+    while ((match = postRegex.exec(html)) !== null) {
+      const [, urlPath, title] = match
+      items.push({
+        id: `d2naver-${urlPath.split('/').pop()}`,
+        platform: 'd2naver',
+        title: title.trim(),
+        url: `https://d2.naver.com${urlPath}`,
+        tags: ['네이버', '기술블로그'],
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    // 대체 패턴
+    if (items.length === 0) {
+      const altRegex = /href="(\/helloworld\/\d+)"[^>]*>([^<]{10,100})</g
+      while ((match = altRegex.exec(html)) !== null) {
+        const [, urlPath, title] = match
+        items.push({
+          id: `d2naver-${urlPath.split('/').pop()}`,
+          platform: 'd2naver',
+          title: title.trim(),
+          url: `https://d2.naver.com${urlPath}`,
+          tags: ['네이버', '기술블로그'],
+          crawledAt: new Date().toISOString(),
+        })
+      }
+    }
+
+    console.log(`D2 Naver: crawled ${items.length} items`)
+  } catch (error) {
+    console.error('D2 Naver crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return items.slice(0, 15)
+}
+
+// tech.kakao.com 크롤러 (카카오 기술 블로그)
+async function crawlKakaoTech(): Promise<NewsTrendItem[]> {
+  const items: NewsTrendItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://tech.kakao.com/blog/')
+
+    // 포스트 추출
+    const postRegex = /<a[^>]*href="(https:\/\/tech\.kakao\.com\/[^"]+)"[^>]*>[\s\S]*?<h[234][^>]*>([^<]+)<\/h[234]>/gi
+
+    let match
+    while ((match = postRegex.exec(html)) !== null) {
+      const [, url, title] = match
+      items.push({
+        id: `kakaotech-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        platform: 'kakaotech',
+        title: title.trim(),
+        url,
+        tags: ['카카오', '기술블로그'],
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`Kakao Tech: crawled ${items.length} items`)
+  } catch (error) {
+    console.error('Kakao Tech crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return items.slice(0, 15)
+}
+
+// velog.io 크롤러 (GraphQL API 사용)
+async function crawlVelog(): Promise<NewsTrendItem[]> {
+  const items: NewsTrendItem[] = []
+
+  try {
+    // Velog GraphQL API
+    const res = await fetch('https://v2.velog.io/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: `
+          query trendingPosts($limit: Int, $offset: Int, $timeframe: String) {
+            trendingPosts(limit: $limit, offset: $offset, timeframe: $timeframe) {
+              id
+              title
+              short_description
+              user {
+                username
+              }
+              url_slug
+              likes
+              comments_count
+              tags
+            }
+          }
+        `,
+        variables: {
+          limit: 20,
+          offset: 0,
+          timeframe: 'week',
+        },
+      }),
+    })
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const data = await res.json()
+    const posts = data?.data?.trendingPosts || []
+
+    for (const post of posts) {
+      items.push({
+        id: `velog-${post.id}`,
+        platform: 'velog',
+        title: post.title,
+        description: post.short_description,
+        url: `https://velog.io/@${post.user.username}/${post.url_slug}`,
+        score: post.likes,
+        comments: post.comments_count,
+        author: post.user.username,
+        tags: post.tags || [],
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    console.log(`Velog: crawled ${items.length} items`)
+  } catch (error) {
+    console.error('Velog crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return items
+}
+
+// yozm.wishket.com 크롤러 (요즘IT)
+async function crawlYozm(): Promise<NewsTrendItem[]> {
+  const items: NewsTrendItem[] = []
+
+  try {
+    const html = await fetchWithHeaders('https://yozm.wishket.com/magazine/')
+
+    // 아티클 추출
+    const articleRegex = /<a[^>]*href="(\/magazine\/detail\/\d+)"[^>]*>[\s\S]*?<[^>]*class="[^"]*title[^"]*"[^>]*>([^<]+)</gi
+
+    let match
+    while ((match = articleRegex.exec(html)) !== null) {
+      const [, urlPath, title] = match
+      items.push({
+        id: `yozm-${urlPath.split('/').pop()}`,
+        platform: 'yozm',
+        title: title.trim(),
+        url: `https://yozm.wishket.com${urlPath}`,
+        tags: ['요즘IT', '개발'],
+        crawledAt: new Date().toISOString(),
+      })
+    }
+
+    // 대체 패턴
+    if (items.length === 0) {
+      const altRegex = /href="(\/magazine\/detail\/\d+)"[^>]*>[\s\S]*?>([^<]{10,100})</g
+      while ((match = altRegex.exec(html)) !== null) {
+        const [, urlPath, title] = match
+        if (!title.includes('<') && !title.includes('{')) {
+          items.push({
+            id: `yozm-${urlPath.split('/').pop()}`,
+            platform: 'yozm',
+            title: title.trim(),
+            url: `https://yozm.wishket.com${urlPath}`,
+            tags: ['요즘IT', '개발'],
+            crawledAt: new Date().toISOString(),
+          })
+        }
+      }
+    }
+
+    console.log(`Yozm: crawled ${items.length} items`)
+  } catch (error) {
+    console.error('Yozm crawl error:', error)
+    // Non-critical, don't throw
+  }
+
+  return items.slice(0, 15)
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { platforms } = await req.json() as { platforms?: NewsTrendPlatform[] }
@@ -310,6 +583,27 @@ export async function POST(req: NextRequest) {
             break
           case 'disquiet':
             items = await crawlDisquiet()
+            break
+          case 'eopla':
+            items = await crawlEopla()
+            break
+          case 'reddit':
+            // Multiple subreddits
+            const programming = await crawlReddit('programming')
+            const ml = await crawlReddit('MachineLearning')
+            items = [...programming, ...ml]
+            break
+          case 'd2naver':
+            items = await crawlD2Naver()
+            break
+          case 'kakaotech':
+            items = await crawlKakaoTech()
+            break
+          case 'velog':
+            items = await crawlVelog()
+            break
+          case 'yozm':
+            items = await crawlYozm()
             break
         }
 

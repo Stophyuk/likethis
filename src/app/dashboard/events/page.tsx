@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { RefreshCw, ExternalLink, Calendar, MapPin, Loader2, Sparkles, Clock, DollarSign } from 'lucide-react'
+import { RefreshCw, ExternalLink, Calendar, MapPin, Loader2, Sparkles, Clock, DollarSign, List, CalendarDays, ChevronLeft, ChevronRight, Filter } from 'lucide-react'
 import type { EventSource, EventItem, EventSourcePlatform, EventType } from '@/types'
 import { useSync } from '@/hooks/useSync'
 
@@ -20,7 +20,12 @@ const DEFAULT_SOURCES: EventSource[] = [
   { id: 'onoffmix-developer', platform: 'onoffmix', name: '개발자', url: 'https://onoffmix.com/event?s=개발자', keywords: ['개발', '코딩'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'onoffmix-tech', platform: 'onoffmix', name: '테크', url: 'https://onoffmix.com/event?s=테크', keywords: ['테크', 'tech'], isActive: true, createdAt: new Date().toISOString() },
   { id: 'meetup-tech', platform: 'meetup', name: 'Seoul Tech', url: 'https://www.meetup.com/find/?location=kr--Seoul&source=EVENTS&keywords=tech', keywords: ['tech'], isActive: true, createdAt: new Date().toISOString() },
+  { id: 'dev-event', platform: 'dev-event', name: 'Dev Event', url: 'https://dev-event.vercel.app', keywords: ['개발', '컨퍼런스'], isActive: true, createdAt: new Date().toISOString() },
+  { id: 'event-us', platform: 'event-us', name: 'Event-us', url: 'https://event-us.kr', keywords: ['IT', '테크'], isActive: true, createdAt: new Date().toISOString() },
 ]
+
+// View type
+type ViewType = 'list' | 'calendar'
 
 // 플랫폼별 색상
 const platformColors: Record<EventSourcePlatform, string> = {
@@ -29,6 +34,11 @@ const platformColors: Record<EventSourcePlatform, string> = {
   festa: '#7B68EE',
   okky: '#3B82F6',
   custom: '#6B7280',
+  'dev-event': '#10B981',
+  'event-us': '#8B5CF6',
+  'k-startup': '#EC4899',
+  'allforyoung': '#F59E0B',
+  'linkareer': '#06B6D4',
 }
 
 // 이벤트 유형별 설정
@@ -127,8 +137,14 @@ export default function EventsPage() {
   const [filterVerdict, setFilterVerdict] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState<'all' | 'upcoming' | 'ongoing' | 'ended'>('upcoming')
   const [filterEventType, setFilterEventType] = useState<EventType | 'all'>('all')
+  const [filterOnline, setFilterOnline] = useState<'all' | 'online' | 'offline'>('all')
+  const [filterCost, setFilterCost] = useState<'all' | 'free' | 'paid'>('all')
+  const [filterSource, setFilterSource] = useState<EventSourcePlatform | 'all'>('all')
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'all' | 'recommended'>('all')
+  const [viewType, setViewType] = useState<ViewType>('list')
+  const [calendarDate, setCalendarDate] = useState(new Date())
+  const [showFilters, setShowFilters] = useState(false)
   const { syncEventsNow } = useSync()
 
   // 페이지 로드 시 캐시에서만 로드 (자동 크롤링 없음)
@@ -252,8 +268,55 @@ export default function EventsPage() {
     if (filterVerdict && e.recommendation?.verdict !== filterVerdict) return false
     if (filterStatus !== 'all' && e.currentStatus !== filterStatus) return false
     if (filterEventType !== 'all' && e.eventType !== filterEventType) return false
+    if (filterOnline === 'online' && !e.isOnline) return false
+    if (filterOnline === 'offline' && e.isOnline) return false
+    if (filterCost === 'free' && e.cost && !e.cost.includes('무료') && e.cost !== '0원') return false
+    if (filterCost === 'paid' && (e.cost?.includes('무료') || e.cost === '0원')) return false
+    if (filterSource !== 'all' && e.platform !== filterSource) return false
     return true
   })
+
+  // Calendar helpers
+  const getCalendarDays = () => {
+    const year = calendarDate.getFullYear()
+    const month = calendarDate.getMonth()
+    const firstDay = new Date(year, month, 1)
+    const lastDay = new Date(year, month + 1, 0)
+    const days: (Date | null)[] = []
+
+    // Add empty slots for days before the first day of month
+    for (let i = 0; i < firstDay.getDay(); i++) {
+      days.push(null)
+    }
+
+    // Add all days in month
+    for (let i = 1; i <= lastDay.getDate(); i++) {
+      days.push(new Date(year, month, i))
+    }
+
+    return days
+  }
+
+  const getEventsForDate = (date: Date) => {
+    return filteredEvents.filter(e => {
+      const eventDate = new Date(e.eventDate)
+      return eventDate.toDateString() === date.toDateString()
+    })
+  }
+
+  const prevMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() - 1, 1))
+  }
+
+  const nextMonth = () => {
+    setCalendarDate(new Date(calendarDate.getFullYear(), calendarDate.getMonth() + 1, 1))
+  }
+
+  // Source stats
+  const sourceStats = Object.keys(platformColors).reduce((acc, platform) => {
+    acc[platform as EventSourcePlatform] = eventsWithStatus.filter(e => e.platform === platform).length
+    return acc
+  }, {} as Record<EventSourcePlatform, number>)
 
   // 이벤트 유형별 통계
   const eventTypeStats = {
@@ -306,6 +369,28 @@ export default function EventsPage() {
               마지막 수집: {new Date(lastCrawled).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
+          {/* View toggle */}
+          <div className="flex border rounded-lg overflow-hidden">
+            <Button
+              variant={viewType === 'list' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewType('list')}
+              className="rounded-none"
+            >
+              <List className="w-4 h-4" />
+            </Button>
+            <Button
+              variant={viewType === 'calendar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewType('calendar')}
+              className="rounded-none"
+            >
+              <CalendarDays className="w-4 h-4" />
+            </Button>
+          </div>
+          <Button onClick={() => setShowFilters(!showFilters)} variant="outline" size="sm">
+            <Filter className="w-4 h-4" />
+          </Button>
           <Button onClick={handleRefresh} disabled={loading} size="sm" variant="outline">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
             <span className="ml-1">새로고침</span>
@@ -321,14 +406,81 @@ export default function EventsPage() {
         </div>
       </div>
 
+      {/* Extended filters panel */}
+      {showFilters && (
+        <Card className="p-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Source filter */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">소스</label>
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  variant={filterSource === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterSource('all')}
+                  className="text-xs"
+                >
+                  전체
+                </Button>
+                {Object.entries(sourceStats).filter(([, count]) => count > 0).map(([platform, count]) => (
+                  <Button
+                    key={platform}
+                    variant={filterSource === platform ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setFilterSource(platform as EventSourcePlatform)}
+                    className="text-xs"
+                    style={filterSource === platform ? {} : { borderColor: platformColors[platform as EventSourcePlatform], color: platformColors[platform as EventSourcePlatform] }}
+                  >
+                    {platform} ({count})
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Online/Offline filter */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">참여 방식</label>
+              <div className="flex gap-1">
+                <Button variant={filterOnline === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilterOnline('all')} className="text-xs">
+                  전체
+                </Button>
+                <Button variant={filterOnline === 'online' ? 'default' : 'outline'} size="sm" onClick={() => setFilterOnline('online')} className="text-xs">
+                  🌐 온라인
+                </Button>
+                <Button variant={filterOnline === 'offline' ? 'default' : 'outline'} size="sm" onClick={() => setFilterOnline('offline')} className="text-xs">
+                  📍 오프라인
+                </Button>
+              </div>
+            </div>
+
+            {/* Cost filter */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">비용</label>
+              <div className="flex gap-1">
+                <Button variant={filterCost === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilterCost('all')} className="text-xs">
+                  전체
+                </Button>
+                <Button variant={filterCost === 'free' ? 'default' : 'outline'} size="sm" onClick={() => setFilterCost('free')} className="text-xs">
+                  무료
+                </Button>
+                <Button variant={filterCost === 'paid' ? 'default' : 'outline'} size="sm" onClick={() => setFilterCost('paid')} className="text-xs">
+                  유료
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* 소스 배지 */}
       <div className="flex flex-wrap gap-2">
         {sources.filter(s => s.isActive).map(source => (
           <Badge
             key={source.id}
             variant="outline"
-            className="text-xs"
+            className="text-xs cursor-pointer hover:opacity-80"
             style={{ borderColor: platformColors[source.platform], color: platformColors[source.platform] }}
+            onClick={() => setFilterSource(filterSource === source.platform ? 'all' : source.platform)}
           >
             {source.name}
           </Badge>
@@ -570,8 +722,75 @@ export default function EventsPage() {
         </div>
       )}
 
-      {/* 날짜별 보기 */}
-      {viewMode === 'all' && groupedEvents && Object.entries(groupedEvents).map(([date, dateEvents]) => (
+      {/* Calendar View */}
+      {viewType === 'calendar' && (
+        <Card className="p-4">
+          {/* Calendar Header */}
+          <div className="flex items-center justify-between mb-4">
+            <Button variant="ghost" size="sm" onClick={prevMonth}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <h2 className="text-lg font-semibold">
+              {calendarDate.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}
+            </h2>
+            <Button variant="ghost" size="sm" onClick={nextMonth}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Calendar Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {/* Weekday headers */}
+            {['일', '월', '화', '수', '목', '금', '토'].map(day => (
+              <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                {day}
+              </div>
+            ))}
+
+            {/* Calendar days */}
+            {getCalendarDays().map((day, idx) => {
+              if (!day) {
+                return <div key={`empty-${idx}`} className="h-24 bg-gray-50 rounded" />
+              }
+
+              const dayEvents = getEventsForDate(day)
+              const isToday = day.toDateString() === new Date().toDateString()
+
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={`h-24 border rounded p-1 overflow-hidden ${isToday ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                >
+                  <div className={`text-xs font-medium mb-1 ${isToday ? 'text-blue-600' : 'text-gray-600'}`}>
+                    {day.getDate()}
+                  </div>
+                  <div className="space-y-0.5 overflow-y-auto max-h-16">
+                    {dayEvents.slice(0, 3).map(event => (
+                      <div
+                        key={event.id}
+                        className="text-xs truncate px-1 py-0.5 rounded cursor-pointer hover:opacity-80"
+                        style={{ backgroundColor: `${platformColors[event.platform]}20`, color: platformColors[event.platform] }}
+                        onClick={() => window.open(event.registrationUrl, '_blank')}
+                        title={event.title}
+                      >
+                        {event.title}
+                      </div>
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <div className="text-xs text-gray-500 px-1">
+                        +{dayEvents.length - 3}개 더
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* List View - 날짜별 보기 */}
+      {viewType === 'list' && viewMode === 'all' && groupedEvents && Object.entries(groupedEvents).map(([date, dateEvents]) => (
         <div key={date} className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2 sticky top-0 bg-gray-50 py-2 z-10">
             <Calendar className="w-5 h-5 text-gray-400" />
@@ -579,70 +798,70 @@ export default function EventsPage() {
             <Badge variant="secondary">{dateEvents.length}</Badge>
           </h2>
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {/* Compact list view */}
+          <div className="space-y-2">
             {dateEvents.map(event => {
               const status = getEventStatus(event)
               return (
-                <Card
+                <div
                   key={event.id}
-                  className={`hover:shadow-md transition-shadow cursor-pointer group relative ${status === 'ended' ? 'opacity-60' : ''}`}
+                  className={`flex items-center gap-3 p-3 bg-white rounded-lg border hover:shadow-md transition-shadow cursor-pointer ${status === 'ended' ? 'opacity-60' : ''}`}
                   style={{ borderLeftWidth: 4, borderLeftColor: platformColors[event.platform] }}
                   onClick={() => window.open(event.registrationUrl, '_blank')}
                 >
-                  {/* 상태 배지 */}
+                  {/* Time */}
+                  <div className="flex-shrink-0 w-16 text-center">
+                    <div className="text-sm font-medium text-gray-900">
+                      {new Date(event.eventDate).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+
+                  {/* Status indicator */}
                   {status === 'ongoing' && (
-                    <div className="absolute top-2 left-2 px-1.5 py-0.5 text-xs font-bold rounded bg-red-500 text-white animate-pulse">
+                    <span className="flex-shrink-0 px-1.5 py-0.5 text-xs font-bold rounded bg-red-500 text-white animate-pulse">
                       LIVE
-                    </div>
+                    </span>
                   )}
 
-                  {/* 추천 배지 (작게) */}
-                  {event.recommendation && (
-                    <div
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                      style={{
-                        backgroundColor: verdictConfig[event.recommendation.verdict]?.bg,
-                        color: verdictConfig[event.recommendation.verdict]?.color,
-                      }}
-                      title={`${verdictConfig[event.recommendation.verdict]?.label} (${event.recommendation.score}/10)`}
-                    >
-                      {event.recommendation.score}
+                  {/* Event info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium truncate ${status === 'ended' ? 'text-gray-500' : 'text-gray-900'}`}>
+                        {event.title}
+                      </span>
+                      {event.recommendation && (
+                        <span
+                          className="flex-shrink-0 text-xs px-1.5 py-0.5 rounded"
+                          style={{
+                            backgroundColor: verdictConfig[event.recommendation.verdict]?.bg,
+                            color: verdictConfig[event.recommendation.verdict]?.color,
+                          }}
+                        >
+                          {event.recommendation.score}점
+                        </span>
+                      )}
                     </div>
-                  )}
+                    <div className="flex items-center gap-3 text-xs text-gray-500 mt-0.5">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3" />
+                        {event.isOnline ? '온라인' : event.location?.substring(0, 15)}
+                      </span>
+                      {event.cost && (
+                        <span className={event.cost.includes('무료') ? 'text-green-600' : ''}>
+                          {event.cost}
+                        </span>
+                      )}
+                      {event.eventType && (
+                        <Badge variant="outline" className="text-xs py-0">
+                          {eventTypeConfig[event.eventType]?.emoji} {eventTypeConfig[event.eventType]?.label}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
 
-                  <CardHeader className="pb-2 pr-10">
-                    <CardTitle className={`text-sm font-medium leading-tight group-hover:text-blue-600 ${status === 'ended' ? 'text-gray-500' : ''}`}>
-                      {status === 'ended' && <span className="text-gray-400">[종료] </span>}
-                      {event.title}
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="pt-0 space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <Clock className="w-3 h-3" />
-                      <span>{formatEventDate(event.eventDate, event.eventEndDate)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <MapPin className="w-3 h-3" />
-                      <span className="truncate">{event.isOnline ? '온라인' : event.location}</span>
-                    </div>
-                    {event.cost && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <DollarSign className="w-3 h-3" />
-                        <span>{event.cost}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-1">
-                      <div className="flex flex-wrap gap-1">
-                        {event.tags.slice(0, 2).map(tag => (
-                          <Badge key={tag} variant="secondary" className="text-xs">#{tag}</Badge>
-                        ))}
-                      </div>
-                      <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-blue-500" />
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* External link icon */}
+                  <ExternalLink className="flex-shrink-0 w-4 h-4 text-gray-400" />
+                </div>
               )
             })}
           </div>
