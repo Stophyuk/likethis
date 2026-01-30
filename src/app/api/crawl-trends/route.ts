@@ -41,9 +41,10 @@ async function crawlGeekNews(): Promise<NewsTrendItem[]> {
 
   try {
     const rss = await fetchWithHeaders('https://news.hada.io/rss/news')
+    console.log(`GeekNews RSS fetched, length: ${rss.length}`)
 
-    // Atom feed 파싱
-    const entryRegex = /<entry>[\s\S]*?<title>([^<]+)<\/title>[\s\S]*?<link[^>]*href="([^"]+)"[^>]*\/>[\s\S]*?<id>([^<]+)<\/id>[\s\S]*?<author>[\s\S]*?<name>([^<]+)<\/name>[\s\S]*?<\/entry>/g
+    // Atom feed 파싱 - 작은따옴표와 큰따옴표 모두 지원
+    const entryRegex = /<entry>[\s\S]*?<title>([^<]+)<\/title>[\s\S]*?<link[^>]*href=['"]([^'"]+)['"][^>]*\/>[\s\S]*?<id>([^<]+)<\/id>[\s\S]*?<author>[\s\S]*?<name>([^<]+)<\/name>[\s\S]*?<\/entry>/g
 
     let match
     while ((match = entryRegex.exec(rss)) !== null) {
@@ -266,6 +267,7 @@ async function crawlD2Naver(): Promise<NewsTrendItem[]> {
 
   try {
     const rss = await fetchWithHeaders('https://d2.naver.com/d2.atom')
+    console.log(`D2 Naver RSS fetched, length: ${rss.length}`)
 
     // Atom feed 파싱
     const entryRegex = /<entry>[\s\S]*?<title>([^<]+)<\/title>[\s\S]*?<link[^>]*href="([^"]+)"[^>]*\/>[\s\S]*?<id>([^<]+)<\/id>/g
@@ -300,6 +302,7 @@ async function crawlKakaoTech(): Promise<NewsTrendItem[]> {
 
   try {
     const rss = await fetchWithHeaders('https://tech.kakao.com/blog/feed/')
+    console.log(`Kakao Tech RSS fetched, length: ${rss.length}`)
 
     // RSS 파싱
     const itemRegex = /<item>[\s\S]*?<title><!\[CDATA\[([^\]]+)\]\]><\/title>[\s\S]*?<link>([^<]+)<\/link>[\s\S]*?<dc:creator><!\[CDATA\[([^\]]+)\]\]><\/dc:creator>/g
