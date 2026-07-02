@@ -1,73 +1,50 @@
-# LikeThis
+# likethis
 
-10개 소셜 플랫폼에서 커뮤니티 활동을 체계적으로 관리하고, AI 기반 추천과 콘텐츠 변환을 제공하는 웹 애플리케이션입니다.
+매일 이어가는 build-in-public을 위한 **1인용 원소스 멀티유즈 글쓰기 엔진**.
 
-## 지원 플랫폼
+메모 하나를 쓰면 Claude가 X · Threads · LinkedIn · Bluesky 각 플랫폼 톤에 맞는 초안으로 바꿔주고(복붙 발행), 노션 일기에서 매일 글감을 발굴해 Slack으로 넛지를 보내주며, 스트릭으로 꾸준함을 기록합니다.
 
-X, Product Hunt, Medium, Naver Blog, YouTube, Instagram, Reddit, LinkedIn, Indie Hackers, Kakao
+## 핵심 루프
 
-## 주요 기능
-
-- **대시보드**: 일일 체크리스트, 활동 스트릭, 플랫폼별 진행률 확인
-- **AI 추천**: 플랫폼별 맞춤 활동 추천 (GPT-4 Turbo)
-- **콘텐츠 작성**: 아이디어 → 초안 → 플랫폼별 변환 3단계 워크플로우
-- **카카오 분석**: CSV 업로드로 채팅방 대화 AI 분석
-- **활동 히스토리**: 주간 비교, 플랫폼 통계, 타임라인
-- **플랫폼 가이드**: 각 플랫폼별 설정 및 활용 가이드
-
-## 기술 스택
-
-- **Frontend**: Next.js 16, React 19, TypeScript, TailwindCSS 4
-- **UI**: Radix UI, shadcn-ui, Lucide Icons
-- **Backend**: Next.js API Routes, Firebase Admin SDK
-- **Database**: Firebase Firestore
-- **Auth**: Firebase Authentication (Email/Google OAuth)
-- **AI**: OpenAI GPT-4 Turbo
-
-## 시작하기
-
-### 환경 변수 설정
-
-`.env.local` 파일을 생성하고 다음 변수를 설정하세요:
-
-```env
-# Firebase Client
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
-
-# Firebase Admin
-FIREBASE_PROJECT_ID=
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
-
-# OpenAI
-OPENAI_API_KEY=
+```
+노션 일기 → 매일 17:00 KST cron → Slack 넛지(오늘의 소재)
+  → /compose 에서 4개 플랫폼 변형 → 복붙 게시 → 발행 완료 체크 → 🔥 스트릭
 ```
 
-### 설치 및 실행
+## 기능
+
+- **작성 & 변형** — 원소스 하나를 플랫폼별 글자수·톤·포맷에 맞게 변형. 내 과거 글 샘플로 보이스 유지, X는 링크를 첫 댓글로 분리
+- **매일 소재 제안** — 관심사 + 최근 노션 일기 + 히스토리 기반, Slack DM으로 도착
+- **스트릭** — 발행한 날을 체크하면 연속 일수와 최근 5주 캘린더로 시각화
+- **단축키** — `⌘+Enter` 변형 · `1–4` 탭 전환 · `C` 복사
+
+## 스택
+
+Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn/ui · AI SDK + `@ai-sdk/anthropic`(Claude) · Supabase · Notion API(읽기) · Slack Incoming Webhook · Vercel Cron
+
+## 실행
 
 ```bash
 npm install
-npm run dev
+npm run dev   # http://localhost:3000
 ```
 
-[http://localhost:3000](http://localhost:3000)에서 확인할 수 있습니다.
+`.env.local` 필요 변수:
 
-## 스크립트
-
-```bash
-npm run dev      # 개발 서버 실행
-npm run build    # 프로덕션 빌드
-npm run start    # 프로덕션 서버 실행
-npm run lint     # ESLint 검사
 ```
+APP_PASSWORD=            # 로그인 비밀번호 (단일 사용자)
+CRON_SECRET=             # cron 보호 시크릿
+ANTHROPIC_API_KEY=       # Claude API
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+NOTION_TOKEN=            # 노션 integration (일기 페이지 공유 필요)
+APP_URL=                 # 배포 URL (Slack 넛지 링크용)
+```
+
+DB 스키마는 `supabase/schema.sql`을 Supabase SQL Editor에서 실행. Slack 웹훅 URL은 앱의 `/settings`에서 입력합니다.
 
 ## 배포
 
-Vercel에서 배포할 수 있습니다. 환경 변수를 Vercel 프로젝트 설정에 추가하세요.
+Vercel. `vercel.json`의 cron(`0 8 * * *` UTC = 17:00 KST)이 매일 소재 생성과 Slack 넛지를 담당합니다.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Stophyuk/likethis)
+자세한 구조는 [CLAUDE.md](./CLAUDE.md) 참고.

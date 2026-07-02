@@ -42,3 +42,7 @@ next-env.d.ts
 
 # Kakao chat exports
 KakaoTalk_Chat_*.csv
+
+# local tool artifacts
+.playwright-mcp/
+supabase/.temp/
